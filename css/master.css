@@ -1,0 +1,105 @@
+/* html, body{
+  height: 100%;
+  width: 100%;
+} */
+body{
+  font-family: 'Roboto', Arial, Helvetica, sans-serif;
+}
+
+.cabecera{
+  height: auto;
+  text-align: center;
+  text-decoration-color: white;
+  font-size: 24px;
+  padding: 10px;
+}
+
+.todo{
+	width: 90%;
+}
+.map{
+  width: 100%;
+  height: 800px;
+}
+/*controles*/
+
+.ol-control {
+  color: #454545;
+  background-color: rgba(255,255,255,0.9);
+}
+
+.ol-scale-line{
+  background-color: white;
+  border-radius: 2px;
+}
+
+.ol-scale-line-inner{
+  color: #454545;
+  border-color: #454545;
+}
+
+.ol-control button{
+  color: #454545;
+  background-color: rgba(255,255,255,0.9);
+}
+
+.ol-control button:hover{
+  color: white;
+  background-color: #454545;
+}
+
+.ol-control button:focus{
+  color: #454545;
+  background-color: rgba(255,255,255,0.9);
+}
+
+.zoom-centros{
+    right: 0.5em;
+    top: 25%;
+}
+
+.ol-custom-overviewmap:not(.ol-collapsed)  {
+  border: 1px solid black;
+  right: 1px;
+}
+
+.ol-custom-overviewmap .ol-overviewmap-map {
+  border: none;
+  width: 200px;
+}
+
+.ol-custom-overviewmap .ol-overviewmap-box {
+  border: 2px solid red;
+}
+
+.ol-custom-overviewmap:not(.ol-collapsed) button{
+  bottom: auto;
+  left: auto;
+  right: 1px;
+  top: 1px;
+}
+
+footer{
+  bottom: 0;
+  background-color: rgba(255,255,255,1);
+  padding: 5px;
+  width: 100%;
+  display: block;
+}
+
+.log-min{
+  float: left;
+  margin: 0;
+}
+
+.logo{
+  height: 30px;
+  margin-left: 20px;
+  margin-top: 0px;
+}
+
+.txt-cred{
+	color: #6E6E6E;
+  margin-right: 50px;
+  float: right;
+}
