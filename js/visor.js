@@ -174,7 +174,7 @@ function InitMapa(){
         new ol.control.ScaleLine(),
       //   new ol.control.OverviewMap({
       //     layers:[osm],
-      //     className: 'ol-overviewmap ol-custom-overviewmap'
+      //     className: 'ol-custom-overviewmap'
       // })
       ],
       layers: [osm,centrosIntegrados,centros],
@@ -194,4 +194,143 @@ function InitMapa(){
          if(!popper) return;
        popper.scheduleUpdate();
      });
+}
+
+function PonPopups(){
+  var popup = new ol.Overlay({
+      element: document.getElementById('popup'),
+      autoPan: true,
+      autoPanAnimation: {
+        duration: 250
+      }
+  });
+  mapa.addOverlay(popup);
+  mapa.on('click', function(evt) {
+    var feature = mapa.forEachFeatureAtPixel(evt.pixel,
+      function(feature, layer) {
+        if (layer.get('name') == 'centros') {
+          if (feature) {
+               var coordinate = evt.coordinate;
+               MuestraPopupCentros(coordinate,feature);
+          }
+              return feature;
+        }
+        if (layer.get('name') == 'centros-integrados') {
+          if (feature) {
+               var coordinate = evt.coordinate;
+               MuestraPopupCentrosIntegrados(coordinate,feature);
+          }
+              return feature;
+        }
+      });
+    });
+}
+
+function FormatoContPopup(feature){
+  var contenidoPopup = document.createElement('DIV');
+  var claves = feature.getKeys();
+  for (var i = 0; i < claves.length; i++) {
+    var prefijo = claves[i].substring(0,8);
+    if (prefijo == 'mostrar_') {
+      var prfClave = document.createElement('p');
+      prfClave.setAttribute('class','pop-clave');
+      prfClave.innerHTML = claves[i].substring(8).replace(/_/g, " ");
+      var prfItem = document.createElement('p');
+      prfItem.setAttribute('class','pop-item');
+      prfItem.innerHTML = feature.get(claves[i]);
+      contenidoPopup.appendChild(prfClave);
+      contenidoPopup.appendChild(prfItem);
+    }
+    if (prefijo == '_enlace_') {
+      var prfClave = document.createElement('p');
+      prfClave.setAttribute('class','pop-clave');
+      prfClave.innerHTML = claves[i].substring(8).replace(/_/g, " ");
+      var prfItem = document.createElement('p');
+      prfItem.setAttribute('class','pop-item');
+      var txtItem = document.createElement('a');
+      txtItem.innerHTML = feature.get(claves[i]);
+      txtItem.setAttribute('href',feature.get(claves[i]));
+      txtItem.setAttribute('target','_blank');
+      prfItem.appendChild(txtItem);
+      contenidoPopup.appendChild(prfClave);
+      contenidoPopup.appendChild(prfItem);
+    }
+  }
+  return contenidoPopup;
+}
+
+function MuestraPopupCentros(coord,feature){
+  var element = document.getElementById('popup');
+  var popup = mapa.getOverlays().item(0);//esto sólo funciona porque no tengo más overlays en el mapa. HACER BIEN
+  var plantilla = '<div class="popover" role="tooltip"><div class="popover-header" style="background-image:url('+feature.get('foto')+')" title="Centros"></div><div class="arrow"></div><div onclick="javascript:CierraPops();" class="cierra-pop">X</div><div class="popover-body"></div></div>';
+    var titulo = feature.get('nombre_centro');
+    var contenido = FormatoContPopup(feature);
+  $(element).popover('dispose');
+      popup.setPosition(coord);
+  $(element).popover({
+    'placement': 'top',
+    'animation': false,
+    'html': true,
+    'content': contenido,
+    'title':'<span class="popover-titulo">'+titulo+'</span>',
+    'template':plantilla
+  });
+  $(element).popover('show');
+}
+
+function MuestraPopupCentrosIntegrados(coord,feature){
+    var element = document.getElementById('popup');
+    var popup = mapa.getOverlays().item(0);//esto sólo funciona porque no tengo más overlays en el mapa. HACER BIEN
+    var plantilla;
+    var titulo,contenido;
+    var feats = feature.getProperties().features;
+    if (feats.length == 1) {
+      titulo = feats[0].get('mostrar_centro');
+      plantilla = '<div class="popover" role="tooltip"><div class="popover-header" style="background-image:url('+feats[0].get('foto')+')" title="Centros"></div><div class="arrow"></div><div onclick="javascript:CierraPops();" class="cierra-pop">X</div><div class="popover-body"></div></div>';
+      contenido = FormatoContPopup(feats[0]);
+    }
+    else{
+      var centroPpal = $.grep(feats,function(centro){return centro.get('principal') == "t";})[0];
+      titulo = centroPpal.get('nombre_centro');
+      var pildoras = '<ul class="nav nav-pills">';
+      contenido = document.createElement('div');
+        contenido.setAttribute('class','tab-content');//CREO QUE NO ESTÁN FUNCIONANDO LOS ENLACES, HACER CON JS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      for (var i = 0; i < feats.length; i++) {
+        var panelCentro = document.createElement('div');
+         $(panelCentro).addClass('tab-pane fade');
+         panelCentro.setAttribute('role','tabpanel');
+         panelCentro.setAttribute('id',feats[i].get('mostrar_siglas'));
+         panelCentro.appendChild(FormatoContPopup(feats[i]));
+         if (feats[i].get('mostrar_siglas') == centroPpal.get('mostrar_siglas')) {
+           $(panelCentro).addClass('show active');
+           pildoras += '<li class="nav-item"><a class="nav-link active" id="'+feats[i].get('mostrar_siglas')+'" data-toggle="tab" href="#'+feats[i].get('mostrar_siglas')+'" role="tab" aria-controls="nav-yac" aria-selected="true">'+feats[i].get('mostrar_siglas')+'</a></li>';
+         }
+         else{
+           pildoras += '<li class="nav-item"><a class="nav-link" id="'+feats[i].get('mostrar_siglas')+'" data-toggle="tab" href="#'+feats[i].get('mostrar_siglas')+'" role="tab" aria-controls="nav-yac" aria-selected="true">'+feats[i].get('mostrar_siglas')+'</a></li>';
+         }
+         contenido.appendChild(panelCentro);
+      }
+      pildoras += '</ul>';
+      plantilla = '<div class="popover" role="tooltip"><div class="popover-header" style="background-image:url('+centroPpal.get('foto')+')" title="Centros"></div><div class="arrow"></div><div onclick="javascript:CierraPops();" class="cierra-pop">X</div><div class="popover-pildoras">'+pildoras+'</div><div class="popover-body"></div></div>';
+
+    }
+    $(element).popover('dispose');
+        popup.setPosition(coord);
+    $(element).popover({
+      'placement': 'top',
+      'animation': false,
+      'html': true,
+      'content': contenido,
+      'title':'<span class="popover-titulo">'+titulo+'</span>',
+      'template':plantilla
+    });
+    $(element).popover('show');
+}
+
+function CierraPops(){
+	var elementos = mapa.getOverlays();
+		elementos.forEach(function(element,index,array){
+			var elemento = element.getElement();
+			$(elemento).popover('dispose');
+		})
 }
