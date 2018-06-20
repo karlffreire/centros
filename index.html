@@ -12,36 +12,46 @@
     <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList"></script>
     <script src="https://openlayers.org/en/v4.6.5/build/ol.js" type="text/javascript"></script>
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <script src="https://d3js.org/d3.v4.min.js"></script>
     <script defer src="https://use.fontawesome.com/releases/v5.0.9/js/all.js" integrity="sha384-8iPTk2s/jMVj81dnzb/iFR2sdA7u06vHJyyLlAd4snFpCl/SnyUjRrbdJsw1pGIl" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="./css/master.css">
-    <script type="text/javascript" src="./js/visor.js">
-
-    </script>
+    <script type="text/javascript" src="./js/visor.js"></script>
   </head>
-  <body onload="javascript:InitMapa();CargaCentros(PonCentros);PonPopups()">
-    <div class="container-fluid">
-      <nav class="navbar navbar-dark bg-dark fixed-top" >
-        <div class="row">
-          <div class="col-md-6">
-            <span class="log-min">
-              <a href="http://www.csic.es/" target="_blank"><img src="./img/logoMinisterio.png" title="MEC" class="" style="height: 40px;"/></a>
-              <a href="http://www.csic.es/" target="_blank"><img src="./img/logoCsic.png" title="CSIC" class="logo" style="height: 40px;"/></a>
-            </span>
-          </div>
-          <div class="col-md-6 col-offset-2">
-            <h1 id="tit-ruta" class="navbar-brand">Centros de investigación y delegaciones del CSIC</h1>
-          </div>
+  <body onload="javascript:InitMapa();CargaCentros(PonCentros);PonPopups();PonLeyenda();">
+      <nav class="navbar navbar-dark bg-dark fixed-top cabecera" >
+        <div class="">
+          <span class="log-min">
+            <a href="http://www.csic.es/" target="_blank"><img src="./img/logoMinisterio.png" title="MEC" class="" style="height: 40px;"/></a>
+            <a href="http://www.csic.es/" target="_blank"><img src="./img/logoCsic.png" title="CSIC" class="logo" style="height: 40px;"/></a>
+          </span>
+        </div>
+        <div class="">
+          <span id="titulo" class="navbar-text">Mapa de centros de investigación del CSIC</span>
+        </div>
+        <div class="" style="width:200px;">
         </div>
       </nav>
-      <div id="map" class="map">
-        <div id="popup"></div>
+      <div class="container-fluid todo">
+        <div id="map" class="map">
+          <div id="popup"></div>
       </div>
-      <footer>
-        <span class="txt-cred">
-          <a href="http://cchs.csic.es/" target="_blank"><img src="./img/cchs_go.png" title="CCHS" class="logo"/></a>
-          <a href="http://unidadsig.cchs.csic.es/sig/" target="_blank"><img src="./img/usig_go.png" class="logo" title="USIG"/></a>
+      <div id="leyenda" class="leyenda" style="width:250px;">
+        <svg id="svg-areas" style="width:250px;height:400px;"></svg>
+        <!-- <svg id="svg-delegaciones" style="width:250px;"></svg> -->
+      </div>
+      <div id="caja-pie" class="">
+        <div id="basemapbox" class="mapa-base base-mapbox" style="display: none" onclick="javascript:ponMapaBase('mapbox');"></div>
+        <div id="baseesri" class="mapa-base base-esri" onclick="javascript:ponMapaBase('esrifoto');"></div>
+      </div>
+    </div>
+      <footer class="footer">
+        <span>
+          Consejo Superior de Investigaciones Científicas
         </span>
-      </div>
+        <span style="float:right">
+          <a href="http://cchs.csic.es/" target="_blank"><img src="./img/cchs_b.png" title="CCHS" class="logo"/></a>
+          <a href="http://unidadsig.cchs.csic.es/sig/" target="_blank"><img src="./img/usig_b.png" class="logo" title="USIG"/></a>
+        </span>
     </footer>
   </body>
 </html>

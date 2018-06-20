@@ -1,8 +1,8 @@
-/* html, body{
+html{
   height: 100%;
-  width: 100%;
-} */
+}
 body{
+  height: 100%;
   font-family: 'Roboto', Arial, Helvetica, sans-serif;
 }
 
@@ -16,14 +16,20 @@ body{
   text-decoration-color: white;
   font-size: 24px;
   padding: 10px;
+  box-shadow: 0 4px 8px 0 rgba(255, 255, 255, 0.2), 0 6px 20px 0 rgba(255, 255, 255, 0.19);
+}
+
+#titulo{
+  color: white;
 }
 
 .todo{
-	width: 90%;
+  height: 100%;
 }
+
 .map{
   width: 100%;
-  height: 800px;
+  height: 100%;
 }
 /*controles*/
 
@@ -33,13 +39,45 @@ body{
 }
 
 .ol-scale-line{
-  background-color: white;
+  background-color: rgba(255,255,255,0.7);
   border-radius: 2px;
+  bottom: 5em;
+  left: 0.5em;
 }
 
 .ol-scale-line-inner{
   color: #454545;
   border-color: #454545;
+}
+
+.mapa-base{
+  position: absolute;
+  width: 3em;
+  height: 3em;
+  bottom: 5em;
+  right: 0.5em;
+  background-size: cover;
+  border: solid 2px #CCC;
+  border-radius: 0.3em;
+  cursor: pointer;
+}
+
+.base-esri{
+  background-image: url('../img/base_esri.png');
+}
+
+.base-mapbox{
+  background-image: url('../img/base_mapbox.png');
+}
+
+.leyenda{
+  position: absolute;
+  background-color: rgba(255,255,255,0.9);
+  border-radius: 0.3em;
+  color: #454545;
+  left: 0.5em;
+  top: 8em;
+  padding: 2px 5px;
 }
 
 .ol-control button{
@@ -91,6 +129,7 @@ body{
   background-color: transparent;
   border: none;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  width: 300px;
 }
 
 .popover-header{
@@ -101,10 +140,13 @@ body{
   background-size: cover;
 }
 
+h4 span{
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
 .popover-titulo{
   position: relative;
   bottom: 2px;
-  background-color: #454545;
   color: white;
   float: left;
   padding-left: 2px;
@@ -124,13 +166,23 @@ body{
 }
 
 .popover-pildoras a{
-  padding:2px;
+  padding:1px 3px;
   margin-right: 3px;
 }
 
-.nav-link.active.show{
+.nav-pills > li > a{
+  color: #454545;
+  border-radius: 0;
+}
+
+.nav-pills > li > a:hover{
+  color: #454545;
+}
+
+.nav-pills .nav-link.active, .nav-pills .show > .nav-link{
   background-color: #454545;
 }
+
 
 .popover-body{
   max-height: 200px;
@@ -176,12 +228,13 @@ body{
 
 /*pie*/
 footer{
+  position: absolute;
   bottom: 0;
   background-color: #454545;
   color: white;
-  padding: 5px;
+  padding: 8px;
   width: 100%;
-  display: block;
+  height: 3em;
 }
 
 .log-min{
@@ -192,10 +245,4 @@ footer{
 .logo{
   height: 30px;
   margin-top: 0px;
-}
-
-.txt-cred{
-	color: #6E6E6E;
-  margin-right: 50px;
-  float: right;
 }
