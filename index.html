@@ -5,17 +5,20 @@
     <title>Centros CSIC</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script defer src="https://use.fontawesome.com/releases/v5.0.9/js/all.js" integrity="sha384-8iPTk2s/jMVj81dnzb/iFR2sdA7u06vHJyyLlAd4snFpCl/SnyUjRrbdJsw1pGIl" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://openlayers.org/en/v4.6.5/css/ol.css" type="text/css">
     <!--  Polyfill es necesario para que OL funcione con IE: -->
     <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList"></script>
     <script src="https://openlayers.org/en/v4.6.5/build/ol.js" type="text/javascript"></script>
-    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
     <script src="https://d3js.org/d3.v4.min.js"></script>
-    <script defer src="https://use.fontawesome.com/releases/v5.0.9/js/all.js" integrity="sha384-8iPTk2s/jMVj81dnzb/iFR2sdA7u06vHJyyLlAd4snFpCl/SnyUjRrbdJsw1pGIl" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="./css/master.css">
     <script type="text/javascript" src="./js/visor.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-theme/0.1.0-beta.10/select2-bootstrap.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.full.min.js"></script>
   </head>
   <body onload="javascript:InitMapa();CargaCentros(PonCentros);PonPopups();PonLeyenda();">
       <nav class="navbar navbar-dark bg-dark fixed-top cabecera" >
@@ -32,21 +35,41 @@
         </div>
       </nav>
       <div class="container-fluid todo">
-        <div id="map" class="map">
+        <div id="map" class="map" style="position:absolute">
           <div id="popup"></div>
+        </div>
+      <div class="bloque-izq">
+        <div id="leyenda" class="leyenda" >
+          <svg id="svg-leyenda" style="width:270px;height:260px;"></svg>
+        </div>
+        <div class="">
+          <div class="form-group">
+            <select class="form-control" name="b-centro" id="busca-centro" >
+              <option value=""></option>
+            </select>
+          </div>
+        </div>
       </div>
-      <div id="leyenda" class="leyenda" style="width:250px;">
-        <svg id="svg-areas" style="width:250px;height:400px;"></svg>
-        <!-- <svg id="svg-delegaciones" style="width:250px;"></svg> -->
+      <div class="info-pos">
+        <span id="escala-graf" class="">
+        </span>
+        <span id="coord" class="coord">
+        </span>
       </div>
-      <div id="caja-pie" class="">
+      <div id="centra-mapa" class="input-group buscar">
+        <input id="term-buscar" type="text" class="form-control" aria-label="" placeholder="Buscar lugar...">
+        <div class="input-group-append">
+          <button type="button" class="btn btn-outline-secondary" onclick="javascript:Localiza(CentraMapa)"><i class="fas fa-search"></i></button>
+        </div>
+      </div>
+      <div class="" title="Cambia mapa de fondo">
         <div id="basemapbox" class="mapa-base base-mapbox" style="display: none" onclick="javascript:ponMapaBase('mapbox');"></div>
         <div id="baseesri" class="mapa-base base-esri" onclick="javascript:ponMapaBase('esrifoto');"></div>
       </div>
     </div>
       <footer class="footer">
         <span>
-          Consejo Superior de Investigaciones Científicas
+          2018 © Consejo Superior de Investigaciones Científicas
         </span>
         <span style="float:right">
           <a href="http://cchs.csic.es/" target="_blank"><img src="./img/cchs_b.png" title="CCHS" class="logo"/></a>
