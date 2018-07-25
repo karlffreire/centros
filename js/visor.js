@@ -34,9 +34,9 @@ function mode(array)
     return maxEl;
 }
 
-function CargaCentros(callback){
+function CargaYacis(callback){
   $.ajax({
-    url: './datos/cargaCentros.php',
+    url: './datos/cargaYacis.php',
     success: function(response){
   			if (response) {
   				callback(response);
@@ -48,227 +48,167 @@ function CargaCentros(callback){
   });
 }
 
-function PonCentros(resultado){
-  var centros;
-  var centrosIntegrados;
-  var delegaciones;
+function CargaMuseos(callback){
+  $.ajax({
+    url: './datos/cargaMuseos.php',
+    success: function(response){
+  			if (response) {
+  				callback(response);
+  			}
+  			else{
+  				alert('Error cargando los centros');
+  			}
+  		}
+  });
+}
+
+function SelecTablillasYaci(yaci,callback){
+  $.ajax({
+    url: './datos/tablillasPorYaci.php',
+    data: {
+      yaci: yaci
+    },
+    success: function(response){
+  			if (response) {
+          response.origen = yaci
+  				callback(response);
+  			}
+  			else{
+  				alert('Error cargando tablillas');
+  			}
+  		}
+  });
+}
+
+function PonTablillasYaci(resultado){console.log(resultado);
+  var yacis;
+  var museos;
+  var origen;
+  var idDestinos = [];
+  var destinos = [];
+  var destinoTablillas;
+  var lineasSource = new ol.source.Vector();
+  for (var i = 0; i < resultado.length; i++) {
+    idDestinos.push(resultado[i].idmuseo);
+  }
   var capas = mapa.getLayers().getArray();
   for (var i = 0; i < capas.length; i++) {
     var nomcapa = capas[i].get('name');
-    if (nomcapa == 'centros') {centros = capas[i];}
-    else if (nomcapa == 'centros-integrados') {centrosIntegrados = capas[i];}
-    else if (nomcapa == 'delegaciones') {delegaciones = capas[i];}
+    if (nomcapa == 'yacis') {yacis = capas[i];}
+    if (nomcapa == 'museos') {museos = capas[i];}
+    if (nomcapa == 'destino-tablillas') {destinoTablillas = capas[i];}
+    }
+  yacis.getSource().forEachFeature(
+    function(f){
+      if (f.get('id') == resultado.origen) {
+        origen = f;
+      }
+    }
+  )
+  museos.getSource().forEachFeature(
+    function(f){
+      if (idDestinos.indexOf(f.get('id')) != -1) {
+        destinos.push(f);
+      }
+    }
+  )
+  for (var i = 0; i < destinos.length; i++) {
+    var lineaFeat = new ol.Feature();
+    var linea = new ol.geom.LineString();
+    var destino = $.grep(resultado,function(d){return d.idmuseo == destinos[i].get('id')})[0];
+    linea.appendCoordinate(origen.getGeometry().getCoordinates());
+    linea.appendCoordinate(destinos[i].getGeometry().getCoordinates());
+    lineaFeat.setGeometry(linea);
+      lineaFeat.set("imagen",'./img/tablilla.jpg');
+      lineaFeat.set("mostrar_destino",destinos[i].get('nombre'));
+      lineaFeat.set("mostrar_origen",origen.get('nombre'));
+      lineaFeat.set("mostrar_nummero_de_tablillas",destino.count);
+      lineaFeat.set("id_bdtns",destino.id_bdtns);
+    lineasSource.addFeature(lineaFeat);
   }
-  var geojsonCentros = new ol.format.GeoJSON().readFeatures(resultado);
-  var centrosSource = new ol.source.Vector({
-        features: ($.grep(geojsonCentros,function(centro){return centro.get('idarea')!=0||centro.get('idarea')!=9;}))
+  destinoTablillas.setSource(lineasSource);//para hacer curvas hay que usar arcs.js: https://github.com/springmeyer/arc.js
+  CierraPops();
+  mapa.getView().fit(lineasSource.getExtent(),{duration:1000});
+}
+
+function PonYacis(resultado){
+  var yacis;
+  var capas = mapa.getLayers().getArray();
+  for (var i = 0; i < capas.length; i++) {
+    var nomcapa = capas[i].get('name');
+    if (nomcapa == 'yacis') {yacis = capas[i];}
+    }
+  var geojsonYacis = new ol.format.GeoJSON().readFeatures(resultado);
+  var yacisSource = new ol.source.Vector({
+        features: geojsonYacis
       });
-  var delegacionesSource = new ol.source.Vector({
-        features: ($.grep(geojsonCentros,function(centro){return centro.get('idarea')==0||centro.get('idarea')==9;}))
+  yacis.setSource(yacisSource);
+}
+
+function PonMuseos(resultado){
+  var museos;
+  var capas = mapa.getLayers().getArray();
+  for (var i = 0; i < capas.length; i++) {
+    var nomcapa = capas[i].get('name');
+    if (nomcapa == 'museos') {museos = capas[i];}
+    }
+  var geojsonMuseos = new ol.format.GeoJSON().readFeatures(resultado);
+  var museosSource = new ol.source.Vector({
+        features: geojsonMuseos
       });
-  var agrupaCentros = new ol.source.Cluster({
-        distance: 20,
-        source: centrosSource,
-        geometryFunction: function(f){
-          if(f.get('integrado') == 't'){
-            return f.getGeometry();
-          }
-          else{
-             return null;
-          }
-        }
-      });
-  centrosIntegrados.setSource(agrupaCentros);
-  centros.setSource(centrosSource);
-  delegaciones.setSource(delegacionesSource);
-  InitBuscaCentros(geojsonCentros);
+  museos.setSource(museosSource);
 }
 
-function InitBuscaCentros(datos){
-  var data = $.map(datos, function (obj) {
-    obj.id = obj.id || obj.get('id');
-    obj.text = obj.text || obj.get('nombre_centro') +' ('+obj.get('mostrar_siglas')+')';
-    return obj;
-  });
-  $('#busca-centro').select2({
-    data : data,
-    placeholder: 'Buscador de centros',
-    allowClear: true,
-    theme: "bootstrap",
-    width: 'copy'
-  });
-  $('#busca-centro').on('select2:select',function(){
-    IrACentro();
-  });
-}
-
-var objAreas = [
-  {id:0,texto:'Servicios centrales',color:'#94346E'},
-  {id:1,texto:'Humanidades y Ciencias Sociales',color:'#94346E'},
-  {id:2,texto:'Biología y Biomedicina',color:'#38A6A5'},
-  {id:3,texto:'Recursos Naturales',color:'#73AF48'},
-  {id:4,texto:'Ciencias Agrarias',color:'#0F8554'},
-  {id:5,texto:'Ciencia y Tecnologías Físicas',color:'#EDAD08'},
-  {id:6,texto:'Ciencia y Tecnología de Materiales',color:'#E17C05'},
-  {id:7,texto:'Ciencia y Tecnología de Alimentos',color:'#1D6996'},
-  {id:8,texto:'Ciencia y Tecnologías Químicas',color:'#CC503E'},
-  {id:9,texto:'Delegaciones',color:'#94346E'},
-];
-
-function ColorArea(idarea){
-  var objArea = $.grep(objAreas,function(area){return area.id == idarea});
-  return objArea[0].color;
-}
-
-function PonLeyenda(){
-    var leyArea = $.grep(objAreas,function(area){return area.id != 0 && area.id != 9;});
-    var svg = d3.select("#svg-leyenda");
-    svg.append('circle')
-    .attr("r", 5)
-    .attr("cx", 10)
-    .attr("cy", 15)
-    .attr("fill", '#454545');
-    svg.append("text")
-      .attr("y", 20)
-      .attr("x", 20)
-      .style("font-size", '12px')
-      .style("font-style", 'bold')
-      .style("text-anchor", "left")
-      .text("Centros, institutos y unidades de investigación");
-    var areas = svg.selectAll("g")
-        .data(leyArea)
-        .enter();
-      areas.append("circle")
-        .attr("r", 5)
-        .attr("cx", '20px')
-        .attr("cy", function (d, i) {
-          return (i+2) * 20;
-        })
-        .attr("fill", function (d,i){
-          return d.color;
-        });
-      areas.append("text")
-        .attr("x",30)
-        .attr("y", function (d, i) {
-          return (i+2) * 20.5;
-        })
-        .style("font-size", '12px')
-        .attr("text-anchor", "left")
-        .text(function(d){return d.texto;});
-      svg.append("svg:image")
-        .attr("y", function(){return (leyArea.length*20.5)+30})
-        .attr("x", 1)
-        .attr('width', 20)
-        .attr('height', 24)
-        .attr("xlink:href", "./img/central.svg");
-      svg.append("text")
-        .attr("y", function(){return (leyArea.length*20.5)+50})
-        .attr("x", 22)
-        .style("font-size", '12px')
-        .style("font-style", 'bold')
-        .style("text-anchor", "left")
-        .text("Organización central");
-        svg.append("svg:image")
-          .attr("y", function(){return (leyArea.length*20.5)+65})
-          .attr("x", 3)
-          .attr('width', 16)
-          .attr('height', 16)
-          .attr("xlink:href", "./img/estrella.svg");
-        svg.append("text")
-          .attr("y", function(){return (leyArea.length*20.5)+80})
-          .attr("x", 22)
-          .style("font-size", '12px')
-          .style("font-style", 'bold')
-          .style("text-anchor", "left")
-          .text("Delegaciones");
-}
-
-function EstiloCentros(feature) {
-  if (feature.get('integrado')=='f') {
+function EstiloYacis(feature) {
     var radio = 8;
-    if ((feature.get('idarea') != 0)&&(feature.get('idarea') != 9)) {
-      var relleno = ColorArea(feature.get('idarea'));
-      var circulo = new ol.style.Circle({
-        radius: radio,
-        stroke: new ol.style.Stroke({
-          width: 2,
-          color: '#CCC'
-        }),
-        fill: new ol.style.Fill({
-          color: relleno
-        }),
-        rotateWithView: true
-      });
-      var estilo_centro = new ol.style.Style({
-        image: circulo
-      });
-      return [estilo_centro];
-    }
-  }
-}
-
-function EstiloCentrosIntegrados(feature) {
-  var relleno;
-  if (IsCluster(feature)) {
-    var areas = [];
-    var centros = feature.get('features');
-    for (var i = 0; i < centros.length; i++) {
-      areas.push(centros[i].get('idarea'));
-    }
-    var radio = Math.min(feature.get('features').length, 6) + 7;
-    relleno = ColorArea(mode(areas));
-  }
-  else{
-    relleno = ColorArea(feature.get('features')[0].get('idarea'));
-		var radio = 8;
-  }
-  var circulo = new ol.style.Circle({
-    radius: radio,
-    stroke: new ol.style.Stroke({
-      width: 2,
-      color: '#CCC'
-    }),
-    fill: new ol.style.Fill({
-      color: relleno
-    }),
-    rotateWithView: true
-  });
-	var estilo_centro = new ol.style.Style({
-        image: circulo
+    var circulo = new ol.style.Circle({
+      radius: radio,
+      stroke: new ol.style.Stroke({
+        width: 2,
+        color: '#CCC'
+      }),
+      fill: new ol.style.Fill({
+        color: '#CC503E'
+      }),
+      rotateWithView: true
     });
-    return [estilo_centro];
+    var estilo_yaci = new ol.style.Style({
+      image: circulo
+    });
+    return [estilo_yaci];
 }
 
-function EstiloDelegaciones(feature) {
-  if (feature.get('integrado')=='f') {
+function EstiloMuseos(feature) {
     var radio = 8;
-      if (feature.get('idarea') == 0) {
-        var globo = new ol.style.Icon( {
-          anchor: [0.5, 0.5],
-          src: './img/central.svg',
-          scale: 0.8,
-          size: [35,45],
-          imgSize: [30,40]
-        });
-        var estilo_centro = new ol.style.Style({
-          image: globo
-        });
-        return [estilo_centro];
-      }
-      else if (feature.get('idarea') == 9) {
-        var globo = new ol.style.Icon( {
-          anchor: [-0.5, 0.5],
-          src: './img/estrella.svg',
-          scale: 0.8,
-          size: [20,20],
-          imgSize: [20,20]
-        });
-        var estilo_centro = new ol.style.Style({
-          image: globo
-        });
-        return [estilo_centro];
-      }
-  }
+    var circulo = new ol.style.Circle({
+      radius: radio,
+      stroke: new ol.style.Stroke({
+        width: 2,
+        color: '#6F4070'
+      }),
+      fill: new ol.style.Fill({
+        color: '#94346E'
+      }),
+      rotateWithView: true
+    });
+    var estilo_yaci = new ol.style.Style({
+      image: circulo
+    });
+    return [estilo_yaci];
+}
+
+function EstiloDestinosTab(feature) {
+  var ancho = function(){
+              if (feature.get('mostrar_nummero_de_tablillas') ==0) {return 0;}
+              else{return Math.floor(Math.log(feature.get('mostrar_nummero_de_tablillas')));}
+            };
+		var estilo_lineas = new ol.style.Style({
+	          stroke: new ol.style.Stroke({
+	            color: '#6F4070',
+	            width: ancho()
+	          })
+	        });
+    return [estilo_lineas];
 }
 
 function InitMapa(){
@@ -278,19 +218,19 @@ function InitMapa(){
           url: urlMapbox
         })
       });
-    var centros = new ol.layer.Vector({
-            style: EstiloCentros
+    var yacis = new ol.layer.Vector({
+            style: EstiloYacis
           });
-      centros.set('name', 'centros');
-    var delegaciones = new ol.layer.Vector({
-            style: EstiloDelegaciones
+      yacis.set('name', 'yacis');
+    var museos = new ol.layer.Vector({
+            style: EstiloMuseos
           });
-      delegaciones.set('name', 'delegaciones');
-    var centrosIntegrados = new ol.layer.Vector({
-            style: EstiloCentrosIntegrados
+      museos.set('name', 'museos');
+    var destinoTablillas = new ol.layer.Vector({
+            style: EstiloDestinosTab
           });
-      centrosIntegrados.set('name', 'centros-integrados');
-  mapa = new ol.Map({
+      destinoTablillas.set('name', 'destino-tablillas');
+    mapa = new ol.Map({
       controls: [
         new ol.control.Zoom({
           className: 'zoom-centros'
@@ -308,14 +248,13 @@ function InitMapa(){
         }),
         new ol.control.Attribution()
       ],
-      layers: [mapbox,centrosIntegrados,centros,delegaciones],
+      layers: [mapbox,destinoTablillas,yacis, museos],
       view: new ol.View({
         projection: 'EPSG:3857',
         center: [-288976.121475105, 4868797.98060151],
         minZoom: 2,
         maxZoom:18,
-        zoom: 5,
-        extent: [-3268931,2703396,2888198,7220756]
+        zoom: 3
       }),
       target: 'map'
     });
@@ -382,102 +321,38 @@ function PonPopups(){
 function IrACentro(){
   var centro = $("#busca-centro").select2('data')[0];
   mapa.getView().fit(centro.getGeometry(), {duration: 1000});
-  // mapa.once('moveend', function(evt) {
-  //     var centroEnCoordenadas = mapa.getView().getCenter();
-  //     var centroEnPixeles = mapa.getPixelFromCoordinate(centroEnCoordenadas);
-  //     var featureIntersectada = mapa.getFeaturesAtPixel(centroEnPixeles);
-  //     DisparaPopup(centroEnCoordenadas,featureIntersectada[0],mapa.getLayers().getArray()[2]);
-  //   });
 }
 
 function DisparaPopup(evt,feature,layer){
-  if (layer.get('name') == 'centros') {
+  if (layer.get('name') == 'yacis') {
     if (feature) {
-         var coordinate = evt.coordinate;
-         MuestraPopupCentros(coordinate,feature);
+      var coordinate = evt.coordinate;
+      MuestraPopupYacis(coordinate,feature);
     }
         return feature;
   }
-  if (layer.get('name') == 'centros-integrados') {
+  if (layer.get('name') == 'museos') {
     if (feature) {
-         var coordinate = evt.coordinate;
-         MuestraPopupCentrosIntegrados(coordinate,feature);
+      var coordinate = evt.coordinate;
+      MuestraPopupMuseos(coordinate,feature);
     }
-        return feature;
+    return feature;
   }
-  if (layer.get('name') == 'delegaciones') {
+  if (layer.get('name') == 'destino-tablillas') {
     if (feature) {
-         var coordinate = evt.coordinate;
-         MuestraPopupDelegaciones(coordinate,feature);
+      var coordinate = evt.coordinate;
+      MuestraPopupDestTablillas(coordinate,feature);
     }
-        return feature;
+    return feature;
   }
 }
 
-function FormatoContPopup(feature,integrado){
+function FormatoContPopup(feature){
   var contenidoPopup = document.createElement('DIV');
   var claves = feature.getKeys();
-  if (integrado) {
-    var prfClave = document.createElement('p');
-    prfClave.setAttribute('class','pop-clave');
-    prfClave.innerHTML = 'Nombre del centro';
-    var prfItem = document.createElement('p');
-    prfItem.setAttribute('class','pop-item');
-    prfItem.innerHTML = feature.get('nombre_centro');
-    contenidoPopup.appendChild(prfClave);
-    contenidoPopup.appendChild(prfItem);
-  }
   for (var i = 0; i < claves.length; i++) {
     var prefijo = claves[i].substring(0,8);
-    if (claves[i] == 'mostrar_director' && feature.get('mostrar_director')) {
-      var prfClave = document.createElement('p');
-      prfClave.setAttribute('class','pop-clave');
-      prfClave.innerHTML = 'Director/a';//claves[i].substring(8).replace(/_/g, " ");
-      var prfItem = document.createElement('p');
-      prfItem.setAttribute('class','pop-item');
-      var txtItem = document.createElement('a');
-      txtItem.innerHTML = feature.get(claves[i]);
-      if (feature.get('foto_director')) {
-        txtItem.setAttribute('href',feature.get('foto_director'));
-        txtItem.setAttribute('target','_blank');
-      }
-      prfItem.appendChild(txtItem);
-      contenidoPopup.appendChild(prfClave);
-      contenidoPopup.appendChild(prfItem);
-    }
-    else if (claves[i] == 'mostrar_delegado' && feature.get('mostrar_delegado')) {
-      var prfClave = document.createElement('p');
-      prfClave.setAttribute('class','pop-clave');
-      prfClave.innerHTML = 'Delegado/a';//claves[i].substring(8).replace(/_/g, " ");
-      var prfItem = document.createElement('p');
-      prfItem.setAttribute('class','pop-item');
-      var txtItem = document.createElement('a');
-      txtItem.innerHTML = feature.get(claves[i]);
-      if (feature.get('foto_director')) {
-        txtItem.setAttribute('href',feature.get('foto_director'));
-        txtItem.setAttribute('target','_blank');
-      }
-      prfItem.appendChild(txtItem);
-      contenidoPopup.appendChild(prfClave);
-      contenidoPopup.appendChild(prfItem);
-    }
-    else if (claves[i] == 'mostrar_presidenta' && feature.get('mostrar_presidenta')) {
-      var prfClave = document.createElement('p');
-      prfClave.setAttribute('class','pop-clave');
-      prfClave.innerHTML = claves[i].substring(8).replace(/_/g, " ");
-      var prfItem = document.createElement('p');
-      prfItem.setAttribute('class','pop-item');
-      var txtItem = document.createElement('a');
-      txtItem.innerHTML = feature.get(claves[i]);
-      if (feature.get('foto_director')) {
-        txtItem.setAttribute('href',feature.get('foto_director'));
-        txtItem.setAttribute('target','_blank');
-      }
-      prfItem.appendChild(txtItem);
-      contenidoPopup.appendChild(prfClave);
-      contenidoPopup.appendChild(prfItem);
-    }
-    else if ((prefijo == 'mostrar_') && (feature.get(claves[i]))) {
+    if ((prefijo == 'mostrar_') && (feature.get(claves[i]))) {
       var prfClave = document.createElement('p');
       prfClave.setAttribute('class','pop-clave');
       prfClave.innerHTML = claves[i].substring(8).replace(/_/g, " ");
@@ -505,12 +380,14 @@ function FormatoContPopup(feature,integrado){
   return contenidoPopup;
 }
 
-function MuestraPopupCentros(coord,feature){
+function MuestraPopupYacis(coord,feature){
   var element = document.getElementById('popup');
   var popup = mapa.getOverlays().item(0);//esto sólo funciona porque no tengo más overlays en el mapa. HACER BIEN
-  var plantilla = '<div class="popover" role="tooltip"><div class="popover-header" style="background-image:url('+feature.get('foto')+')" title="Centros"></div><div class="arrow"></div><div onclick="javascript:CierraPops();" class="cierra-pop">X</div><div class="popover-body"></div></div>';
-    var titulo = feature.get('nombre_centro');
-    var contenido = FormatoContPopup(feature,false);
+  var destinos = '<a href=javascript:SelecTablillasYaci("'+feature.get('id')+'",PonTablillasYaci)>ver destinos</a>';
+  var tabYaciBD = '<a target="_blank"  href=http://bdtns.filol.csic.es/principal.php?numMuseo=&numBDTS=&numCDLI=&procedencia='+feature.get('nombre')+'&sello=TODOS&fechaPub=&datacion=&abreviatura=&autor=&propietario=&tipoobjeto=TODOS&tipotexto=TODOS&lexema_sello=&tipoperiodo=TODOS&tipolenguaje=TODOS&orden=>ver tablillas</a>';
+  var plantilla = '<div class="popover" role="tooltip"><div class="popover-header" style="background-image:url('+feature.get('imagen')+')" title="Centros"></div><div class="arrow"></div><div onclick="javascript:CierraPops();" class="cierra-pop">X</div><div class="popover-pildoras">'+destinos+tabYaciBD+'</div><div class="popover-body"></div></div>';
+  var titulo = feature.get('nombre');
+  var contenido = FormatoContPopup(feature);
   $(element).popover('dispose');
       popup.setPosition(coord);
   $(element).popover({
@@ -524,65 +401,12 @@ function MuestraPopupCentros(coord,feature){
   $(element).popover('show');
 }
 
-function MuestraPopupCentrosIntegrados(coord,feature){
-    var element = document.getElementById('popup');
-    var popup = mapa.getOverlays().item(0);//esto sólo funciona porque no tengo más overlays en el mapa. HACER BIEN
-    var plantilla;
-    var titulo,contenido;
-    var feats = feature.getProperties().features;
-    if (feats.length == 1) {
-      titulo = feats[0].get('nombre_centro');
-      plantilla = '<div class="popover" role="tooltip"><div class="popover-header" style="background-image:url('+feats[0].get('foto')+')" title="Centros"></div><div class="arrow"></div><div onclick="javascript:CierraPops();" class="cierra-pop">X</div><div class="popover-body"></div></div>';
-      contenido = FormatoContPopup(feats[0],false);
-    }
-    else{
-      var centroPpal = false;
-      centroPpal = $.grep(feats,function(centro){return centro.get('principal') == "t";})[0];
-      if (!centroPpal) {
-        centroPpal = feats[0];
-      }
-      titulo = centroPpal.get('nombre_centro');
-      var pildoras = '<ul class="nav nav-pills">';
-      contenido = document.createElement('div');
-        contenido.setAttribute('class','tab-content');
-      for (var i = 0; i < feats.length; i++) {
-        var panelCentro = document.createElement('div');
-         $(panelCentro).addClass('tab-pane fade');
-         panelCentro.setAttribute('role','tabpanel');
-         panelCentro.setAttribute('id',feats[i].get('mostrar_siglas'));
-         panelCentro.appendChild(FormatoContPopup(feats[i],true));
-         if (feats[i].get('mostrar_siglas') == centroPpal.get('mostrar_siglas')) {
-           $(panelCentro).addClass('show active');
-           pildoras += '<li class="nav-item"><a class="nav-link active" id="pil-'+feats[i].get('mostrar_siglas')+'" data-toggle="tab" href="#'+feats[i].get('mostrar_siglas')+'" role="tab" aria-controls="nav-yac" aria-selected="true">'+feats[i].get('mostrar_siglas')+'</a></li>';
-         }
-         else{
-           pildoras += '<li class="nav-item"><a class="nav-link" id="pil-'+feats[i].get('mostrar_siglas')+'" data-toggle="tab" href="#'+feats[i].get('mostrar_siglas')+'" role="tab" aria-controls="nav-yac" aria-selected="true">'+feats[i].get('mostrar_siglas')+'</a></li>';
-         }
-         contenido.appendChild(panelCentro);
-      }
-      pildoras += '</ul>';
-      plantilla = '<div class="popover" role="tooltip"><div class="popover-header" style="background-image:url('+centroPpal.get('foto')+')" title="Centros"></div><div class="arrow"></div><div onclick="javascript:CierraPops();" class="cierra-pop">X</div><div class="popover-pildoras">'+pildoras+'</div><div class="popover-body"></div></div>';
-
-    }
-    $(element).popover('dispose');
-        popup.setPosition(coord);
-    $(element).popover({
-      'placement': 'top',
-      'animation': false,
-      'html': true,
-      'content': contenido,
-      'title':'<h4 class="popover-titulo"><span>'+titulo+'</span></h4>',
-      'template':plantilla
-    });
-    $(element).popover('show');
-}
-
-function MuestraPopupDelegaciones(coord,feature){
+function MuestraPopupMuseos(coord,feature){
   var element = document.getElementById('popup');
   var popup = mapa.getOverlays().item(0);//esto sólo funciona porque no tengo más overlays en el mapa. HACER BIEN
-  var plantilla = '<div class="popover" role="tooltip"><div class="popover-header" style="background-image:url('+feature.get('foto')+')" title="Centros"></div><div class="arrow"></div><div onclick="javascript:CierraPops();" class="cierra-pop">X</div><div class="popover-body"></div></div>';
-    var titulo = feature.get('nombre_centro');
-    var contenido = FormatoContPopup(feature,false);
+  var plantilla = '<div class="popover" role="tooltip"><div class="popover-header" style="background-image:url('+feature.get('imagen')+')" title="Museo"></div><div class="arrow"></div><div onclick="javascript:CierraPops();" class="cierra-pop">X</div><div class="popover-body"></div></div>';
+    var titulo = feature.get('nombre');
+    var contenido = FormatoContPopup(feature);
   $(element).popover('dispose');
       popup.setPosition(coord);
   $(element).popover({
@@ -591,6 +415,25 @@ function MuestraPopupDelegaciones(coord,feature){
     'html': true,
     'content': contenido,
     'title':'<h4 class="popover-titulo"><span>'+titulo+'</span></h4>',
+    'template':plantilla
+  });
+  $(element).popover('show');
+}
+
+function MuestraPopupDestTablillas(coord,feature){console.log(feature.getKeys());
+  var element = document.getElementById('popup');
+  var popup = mapa.getOverlays().item(0);//esto sólo funciona porque no tengo más overlays en el mapa. HACER BIEN
+  var tabDestBD = '<a target="_blank"  href=http://bdtns.filol.csic.es/principal.php?numMuseo='+feature.get('id_bdtns')+'&numBDTS=&numCDLI=&procedencia='+feature.get('mostrar_origen')+'&sello=TODOS&fechaPub=&datacion=&abreviatura=&autor=&propietario=&tipoobjeto=TODOS&tipotexto=TODOS&lexema_sello=&tipoperiodo=TODOS&tipolenguaje=TODOS&orden=>ver tablillas</a>';
+  var plantilla = '<div class="popover" role="tooltip"><div class="popover-header" style="background-image:url('+feature.get('imagen')+')" title="Destinos"></div><div class="arrow"></div><div onclick="javascript:CierraPops();" class="cierra-pop">X</div><div class="popover-pildoras">'+tabDestBD+'</div><div class="popover-body"></div></div>';
+  var contenido = FormatoContPopup(feature);
+  $(element).popover('dispose');
+  popup.setPosition(coord);
+  $(element).popover({
+    'placement': 'top',
+    'animation': false,
+    'html': true,
+    'content': contenido,
+    'title':'<h4 class="popover-titulo"><span>Destino de las tablillas</span></h4>',
     'template':plantilla
   });
   $(element).popover('show');
@@ -603,24 +446,6 @@ function CierraPops(){
 			$(elemento).popover('dispose');
 		})
 }
-
-
-function Localiza(callbackData) {
-  var termino = document.getElementById('term-buscar').value;
-  $.ajax({
-      url: 'http://api.geonames.org/searchJSON?',
-      data: {
-        username: 'visualizador_hd',
-        q:termino,
-        maxRows: 5,
-        country: 'ES'
-      },
-      dataType: 'json',
-      success:function(data){
-        callbackData(data);
-      }
-    });
-};
 
 function CentraMapa(resultado){
   var lugares = resultado.geonames;

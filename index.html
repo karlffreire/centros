@@ -20,7 +20,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-theme/0.1.0-beta.10/select2-bootstrap.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.full.min.js"></script>
   </head>
-  <body onload="javascript:InitMapa();CargaCentros(PonCentros);PonPopups();PonLeyenda();">
+  <body onload="javascript:InitMapa();CargaYacis(PonYacis);CargaMuseos(PonMuseos);PonPopups();">
       <nav class="navbar navbar-dark bg-dark fixed-top cabecera" >
         <div class="">
           <span class="log-min">
@@ -29,7 +29,7 @@
           </span>
         </div>
         <div class="">
-          <span id="titulo" class="navbar-text">Mapa de centros de investigación del CSIC</span>
+          <span id="titulo" class="navbar-text">Ubicación de textos sumerios</span>
         </div>
         <div class="" style="width:200px;">
         </div>
@@ -38,29 +38,11 @@
         <div id="map" class="map" style="position:absolute">
           <div id="popup"></div>
         </div>
-      <div class="bloque-izq">
-        <div id="leyenda" class="leyenda" >
-          <svg id="svg-leyenda" style="width:270px;height:260px;"></svg>
-        </div>
-        <div class="">
-          <div class="form-group">
-            <select class="form-control" name="b-centro" id="busca-centro" >
-              <option value=""></option>
-            </select>
-          </div>
-        </div>
-      </div>
       <div class="info-pos">
         <span id="escala-graf" class="">
         </span>
         <span id="coord" class="coord">
         </span>
-      </div>
-      <div id="centra-mapa" class="input-group buscar">
-        <input id="term-buscar" type="text" class="form-control" aria-label="" placeholder="Buscar lugar...">
-        <div class="input-group-append">
-          <button type="button" class="btn btn-outline-secondary" onclick="javascript:Localiza(CentraMapa)"><i class="fas fa-search"></i></button>
-        </div>
       </div>
       <div class="" title="Cambia mapa de fondo">
         <div id="basemapbox" class="mapa-base base-mapbox" style="display: none" onclick="javascript:ponMapaBase('mapbox');"></div>
