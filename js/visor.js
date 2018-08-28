@@ -80,7 +80,7 @@ function SelecTablillasYaci(yaci,callback){
   });
 }
 
-function PonTablillasYaci(resultado){console.log(resultado);
+function PonTablillasYaci(resultado){
   var yacis;
   var museos;
   var origen;
@@ -109,6 +109,10 @@ function PonTablillasYaci(resultado){console.log(resultado);
     function(f){
       if (idDestinos.indexOf(f.get('id')) != -1) {
         destinos.push(f);
+        f.setStyle(EstiloMuseosResaltado);
+      }
+      else{
+        f.setStyle(EstiloMuseos);
       }
     }
   )
@@ -123,7 +127,7 @@ function PonTablillasYaci(resultado){console.log(resultado);
       lineaFeat.set("mostrar_destino",destinos[i].get('nombre'));
       lineaFeat.set("mostrar_origen",origen.get('nombre'));
       lineaFeat.set("mostrar_nummero_de_tablillas",destino.count);
-      lineaFeat.set("id_bdtns",destino.id_bdtns);
+      lineaFeat.set("id",destino.id);
     lineasSource.addFeature(lineaFeat);
   }
   destinoTablillas.setSource(lineasSource);//para hacer curvas hay que usar arcs.js: https://github.com/springmeyer/arc.js
@@ -143,6 +147,7 @@ function PonYacis(resultado){
         features: geojsonYacis
       });
   yacis.setSource(yacisSource);
+  mapa.getView().fit(yacis.getSource().getExtent(), {duration: 2000});
 }
 
 function PonMuseos(resultado){
@@ -179,6 +184,25 @@ function EstiloYacis(feature) {
 }
 
 function EstiloMuseos(feature) {
+    var radio = 6;
+    var circulo = new ol.style.Circle({
+      radius: radio,
+      stroke: new ol.style.Stroke({
+        width: 2,
+        color: '#454545'
+      }),
+      fill: new ol.style.Fill({
+        color: '#CCC'
+      }),
+      rotateWithView: true
+    });
+    var estilo_yaci = new ol.style.Style({
+      image: circulo
+    });
+    return [estilo_yaci];
+}
+
+function EstiloMuseosResaltado(feature) {
     var radio = 8;
     var circulo = new ol.style.Circle({
       radius: radio,
@@ -312,10 +336,34 @@ function PonPopups(){
   });
   mapa.addOverlay(popup);
   mapa.on('click', function(evt) {
-    mapa.forEachFeatureAtPixel(evt.pixel,function(feature,layer){
-    DisparaPopup(evt,feature,layer);
+    var feats = mapa.getFeaturesAtPixel(evt.pixel);
+    if (feats) {
+      mapa.forEachFeatureAtPixel(evt.pixel,function(feature,layer){
+        DisparaPopup(evt,feature,layer);
       });
-    });
+    }
+    else{
+      LimpiaMapa();
+    }
+  });
+}
+
+function LimpiaMapa(){
+  CierraPops();
+  var destinoTablillas,museos;
+  var capas = mapa.getLayers().getArray();
+  for (var i = 0; i < capas.length; i++) {
+    var nomcapa = capas[i].get('name');
+    //if (nomcapa == 'yacis') {yacis = capas[i];}
+    if (nomcapa == 'museos') {museos = capas[i];}
+    if (nomcapa == 'destino-tablillas') {destinoTablillas = capas[i];}
+    }
+  museos.getSource().forEachFeature(
+    function(f){
+      f.setStyle(EstiloMuseos);
+    }
+  )
+  destinoTablillas.setSource();
 }
 
 function IrACentro(){
@@ -331,14 +379,14 @@ function DisparaPopup(evt,feature,layer){
     }
         return feature;
   }
-  if (layer.get('name') == 'museos') {
+  else if (layer.get('name') == 'museos') {
     if (feature) {
       var coordinate = evt.coordinate;
       MuestraPopupMuseos(coordinate,feature);
     }
     return feature;
   }
-  if (layer.get('name') == 'destino-tablillas') {
+  else if (layer.get('name') == 'destino-tablillas') {
     if (feature) {
       var coordinate = evt.coordinate;
       MuestraPopupDestTablillas(coordinate,feature);
@@ -420,10 +468,10 @@ function MuestraPopupMuseos(coord,feature){
   $(element).popover('show');
 }
 
-function MuestraPopupDestTablillas(coord,feature){console.log(feature.getKeys());
+function MuestraPopupDestTablillas(coord,feature){
   var element = document.getElementById('popup');
   var popup = mapa.getOverlays().item(0);//esto sólo funciona porque no tengo más overlays en el mapa. HACER BIEN
-  var tabDestBD = '<a target="_blank"  href=http://bdtns.filol.csic.es/principal.php?numMuseo='+feature.get('id_bdtns')+'&numBDTS=&numCDLI=&procedencia='+feature.get('mostrar_origen')+'&sello=TODOS&fechaPub=&datacion=&abreviatura=&autor=&propietario=&tipoobjeto=TODOS&tipotexto=TODOS&lexema_sello=&tipoperiodo=TODOS&tipolenguaje=TODOS&orden=>ver tablillas</a>';
+  var tabDestBD = '<a target="_blank"  href=http://bdtns.filol.csic.es/principal.php?numMuseo=&numBDTS=&numCDLI=&procedencia='+feature.get('mostrar_origen')+'&sello=TODOS&fechaPub=&datacion=&abreviatura=&autor=&propietario='+encodeURIComponent(feature.get('mostrar_destino').trim())+'&tipoobjeto=TODOS&tipotexto=TODOS&lexema_sello=&tipoperiodo=TODOS&tipolenguaje=TODOS&orden=>ver tablillas</a>';
   var plantilla = '<div class="popover" role="tooltip"><div class="popover-header" style="background-image:url('+feature.get('imagen')+')" title="Destinos"></div><div class="arrow"></div><div onclick="javascript:CierraPops();" class="cierra-pop">X</div><div class="popover-pildoras">'+tabDestBD+'</div><div class="popover-body"></div></div>';
   var contenido = FormatoContPopup(feature);
   $(element).popover('dispose');
