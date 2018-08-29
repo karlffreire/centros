@@ -118,10 +118,23 @@ function PonTablillasYaci(resultado){
   )
   for (var i = 0; i < destinos.length; i++) {
     var lineaFeat = new ol.Feature();
-    var linea = new ol.geom.LineString();
     var destino = $.grep(resultado,function(d){return d.idmuseo == destinos[i].get('id')})[0];
-    linea.appendCoordinate(origen.getGeometry().getCoordinates());
-    linea.appendCoordinate(destinos[i].getGeometry().getCoordinates());
+    // linea.appendCoordinate(origen.getGeometry().getCoordinates());
+    // linea.appendCoordinate(destinos[i].getGeometry().getCoordinates());
+    var inicio = {x:0,y:0};
+    var fin = {x:0,y:0};
+    var origenGeo = origen.getGeometry().transform('EPSG:3857','EPSG:4326').clone();
+    var destinoGeo = destinos[i].getGeometry().transform('EPSG:3857','EPSG:4326').clone();
+    origen.getGeometry().transform('EPSG:4326','EPSG:3857');
+    destinos[i].getGeometry().transform('EPSG:4326','EPSG:3857');
+    inicio.x = origenGeo.getCoordinates()[0];
+    inicio.y = origenGeo.getCoordinates()[1];
+    fin.x = destinoGeo.getCoordinates()[0];
+    fin.y = destinoGeo.getCoordinates()[1];
+    var arco = new arc.GreatCircle(inicio, fin);
+    var coordLinea = arco.Arc(100,{offset:10});
+    var linea = new ol.geom.LineString(coordLinea.geometries[0].coords);
+      linea.transform('EPSG:4326','EPSG:3857');
     lineaFeat.setGeometry(linea);
       lineaFeat.set("imagen",'./img/tablilla.jpg');
       lineaFeat.set("mostrar_destino",destinos[i].get('nombre'));
@@ -354,7 +367,6 @@ function LimpiaMapa(){
   var capas = mapa.getLayers().getArray();
   for (var i = 0; i < capas.length; i++) {
     var nomcapa = capas[i].get('name');
-    //if (nomcapa == 'yacis') {yacis = capas[i];}
     if (nomcapa == 'museos') {museos = capas[i];}
     if (nomcapa == 'destino-tablillas') {destinoTablillas = capas[i];}
     }
