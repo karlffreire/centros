@@ -139,7 +139,7 @@ function PonTablillasYaci(resultado){
       lineaFeat.set("imagen",'./img/tablilla.jpg');
       lineaFeat.set("mostrar_destino",destinos[i].get('nombre'));
       lineaFeat.set("mostrar_origen",origen.get('nombre'));
-      lineaFeat.set("mostrar_nummero_de_tablillas",destino.count);
+      lineaFeat.set("mostrar_numero_de_tablillas",Number(destino.count));
       lineaFeat.set("id",destino.id);
     lineasSource.addFeature(lineaFeat);
   }
@@ -197,11 +197,11 @@ function EstiloYacis(feature) {
 }
 
 function EstiloMuseos(feature) {
-    var radio = 6;
+    var radio = 0;
     var circulo = new ol.style.Circle({
       radius: radio,
       stroke: new ol.style.Stroke({
-        width: 2,
+        width: 0,
         color: '#454545'
       }),
       fill: new ol.style.Fill({
@@ -234,10 +234,11 @@ function EstiloMuseosResaltado(feature) {
     return [estilo_yaci];
 }
 
-function EstiloDestinosTab(feature) {
+function EstiloDestinosTab(feature) {console.log(typeof(feature.get('mostrar_numero_de_tablillas')))
   var ancho = function(){
-              if (feature.get('mostrar_nummero_de_tablillas') ==0) {return 0;}
-              else{return Math.floor(Math.log(feature.get('mostrar_nummero_de_tablillas')));}
+              if (feature.get('mostrar_numero_de_tablillas') ==0) {return 0;}
+              else if (feature.get('mostrar_numero_de_tablillas') ==1) {return 1;}
+              else{return Math.log(feature.get('mostrar_numero_de_tablillas'));}
             };
 		var estilo_lineas = new ol.style.Style({
 	          stroke: new ol.style.Stroke({
@@ -260,7 +261,7 @@ function InitMapa(){
           });
       yacis.set('name', 'yacis');
     var museos = new ol.layer.Vector({
-            style: EstiloMuseos
+            //style: EstiloMuseos
           });
       museos.set('name', 'museos');
     var destinoTablillas = new ol.layer.Vector({
@@ -373,6 +374,7 @@ function LimpiaMapa(){
   museos.getSource().forEachFeature(
     function(f){
       f.setStyle(EstiloMuseos);
+
     }
   )
   destinoTablillas.setSource();
