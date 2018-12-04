@@ -87,7 +87,7 @@ function PonTablillasYaci(resultado){
   var idDestinos = [];
   var destinos = [];
   var destinoTablillas;
-  var lineasSource = new ol.source.Vector();
+  var destinosSource = new ol.source.Vector();
   for (var i = 0; i < resultado.length; i++) {
     idDestinos.push(resultado[i].idmuseo);
   }
@@ -109,15 +109,13 @@ function PonTablillasYaci(resultado){
     function(f){
       if (idDestinos.indexOf(f.get('id')) != -1) {
         destinos.push(f);
-        f.setStyle(EstiloMuseosResaltado);
       }
       else{
-        f.setStyle(EstiloMuseos);
       }
     }
   )
   for (var i = 0; i < destinos.length; i++) {
-    var lineaFeat = new ol.Feature();
+    var lineaPuntFeat = new ol.Feature();
     var destino = $.grep(resultado,function(d){return d.idmuseo == destinos[i].get('id')})[0];
     // linea.appendCoordinate(origen.getGeometry().getCoordinates());
     // linea.appendCoordinate(destinos[i].getGeometry().getCoordinates());
@@ -135,17 +133,19 @@ function PonTablillasYaci(resultado){
     var coordLinea = arco.Arc(100,{offset:10});
     var linea = new ol.geom.LineString(coordLinea.geometries[0].coords);
       linea.transform('EPSG:4326','EPSG:3857');
-    lineaFeat.setGeometry(linea);
-      lineaFeat.set("imagen",'./img/tablilla.jpg');
-      lineaFeat.set("mostrar_destino",destinos[i].get('nombre'));
-      lineaFeat.set("mostrar_origen",origen.get('nombre'));
-      lineaFeat.set("mostrar_numero_de_tablillas",Number(destino.count));
-      lineaFeat.set("id",destino.id);
-    lineasSource.addFeature(lineaFeat);
+    var geomDestino = new ol.geom.GeometryCollection([linea,destinos[i].getGeometry()]);
+    lineaPuntFeat.setGeometry(geomDestino);
+      lineaPuntFeat.set("imagen",destinos[i].get('imagen'));
+      lineaPuntFeat.set("mostrar_tipo",destinos[i].get('mostrar_tipo'));
+      lineaPuntFeat.set("destino",destinos[i].get('nombre'));
+      lineaPuntFeat.set("mostrar_origen",origen.get('nombre'));
+      lineaPuntFeat.set("mostrar_numero_de_tablillas",Number(destino.count));
+      lineaPuntFeat.set("id",destino.id);
+    destinosSource.addFeatures([lineaPuntFeat]);
   }
-  destinoTablillas.setSource(lineasSource);//para hacer curvas hay que usar arcs.js: https://github.com/springmeyer/arc.js
+  destinoTablillas.setSource(destinosSource);//para hacer curvas hay que usar arcs.js: https://github.com/springmeyer/arc.js
   CierraPops();
-  mapa.getView().fit(lineasSource.getExtent(),{duration:1000});
+  mapa.getView().fit(destinosSource.getExtent(),{duration:1000});
 }
 
 function PonYacis(resultado){
@@ -197,56 +197,42 @@ function EstiloYacis(feature) {
 }
 
 function EstiloMuseos(feature) {
-    var radio = 0;
-    var circulo = new ol.style.Circle({
-      radius: radio,
-      stroke: new ol.style.Stroke({
-        width: 0,
-        color: '#454545'
-      }),
-      fill: new ol.style.Fill({
-        color: '#CCC'
-      }),
-      rotateWithView: true
-    });
-    var estilo_yaci = new ol.style.Style({
-      image: circulo
-    });
-    return [estilo_yaci];
+    var estilo_mus = new ol.style.Style(null);
+    return [estilo_mus];
 }
 
-function EstiloMuseosResaltado(feature) {
-    var radio = 8;
-    var circulo = new ol.style.Circle({
-      radius: radio,
-      stroke: new ol.style.Stroke({
-        width: 2,
-        color: '#6F4070'
-      }),
-      fill: new ol.style.Fill({
-        color: '#94346E'
-      }),
-      rotateWithView: true
-    });
-    var estilo_yaci = new ol.style.Style({
-      image: circulo
-    });
-    return [estilo_yaci];
-}
-
-function EstiloDestinosTab(feature) {console.log(typeof(feature.get('mostrar_numero_de_tablillas')))
+function EstiloDestinosTab(feature) {
   var ancho = function(){
-              if (feature.get('mostrar_numero_de_tablillas') ==0) {return 0;}
-              else if (feature.get('mostrar_numero_de_tablillas') ==1) {return 1;}
-              else{return Math.log(feature.get('mostrar_numero_de_tablillas'));}
-            };
-		var estilo_lineas = new ol.style.Style({
-	          stroke: new ol.style.Stroke({
-	            color: '#6F4070',
-	            width: ancho()
-	          })
-	        });
-    return [estilo_lineas];
+    if (feature.get('mostrar_numero_de_tablillas') ==0) {return 0;}
+    else if (feature.get('mostrar_numero_de_tablillas') ==1) {return 1;}
+    else{return Math.log(feature.get('mostrar_numero_de_tablillas'));}
+  };
+  var relleno = ColorDestino(feature.get('mostrar_tipo'));
+  var geoms = feature.getGeometry().getGeometries();
+  var linea = geoms[0];
+  var punto = geoms[1];
+  var estiloPunto = new ol.style.Style({
+       geometry: punto,
+       image: new ol.style.Circle({
+             radius: ancho() > 2? ancho() : 2,
+             stroke: new ol.style.Stroke({
+               width: 2,
+               color: relleno
+             }),
+             fill: new ol.style.Fill({
+               color: relleno
+             }),
+             rotateWithView: true
+           })
+   });
+   var estiloLinea = new ol.style.Style({
+        geometry: linea,
+        stroke: new ol.style.Stroke({
+            color: relleno,
+            width: 3
+          })
+    });
+    return [estiloLinea,estiloPunto];
 }
 
 function InitMapa(){
@@ -261,7 +247,7 @@ function InitMapa(){
           });
       yacis.set('name', 'yacis');
     var museos = new ol.layer.Vector({
-            //style: EstiloMuseos
+            style: EstiloMuseos
           });
       museos.set('name', 'museos');
     var destinoTablillas = new ol.layer.Vector({
@@ -393,13 +379,13 @@ function DisparaPopup(evt,feature,layer){
     }
         return feature;
   }
-  else if (layer.get('name') == 'museos') {
-    if (feature) {
-      var coordinate = evt.coordinate;
-      MuestraPopupMuseos(coordinate,feature);
-    }
-    return feature;
-  }
+  // else if (layer.get('name') == 'museos') {
+  //   if (feature) {
+  //     var coordinate = evt.coordinate;
+  //     MuestraPopupMuseos(coordinate,feature);
+  //   }
+  //   return feature;
+  // }
   else if (layer.get('name') == 'destino-tablillas') {
     if (feature) {
       var coordinate = evt.coordinate;
@@ -485,8 +471,9 @@ function MuestraPopupMuseos(coord,feature){
 function MuestraPopupDestTablillas(coord,feature){
   var element = document.getElementById('popup');
   var popup = mapa.getOverlays().item(0);//esto sólo funciona porque no tengo más overlays en el mapa. HACER BIEN
-  var tabDestBD = '<a target="_blank"  href=http://bdtns.filol.csic.es/principal.php?numMuseo=&numBDTS=&numCDLI=&procedencia='+feature.get('mostrar_origen')+'&sello=TODOS&fechaPub=&datacion=&abreviatura=&autor=&propietario='+encodeURIComponent(feature.get('mostrar_destino').trim())+'&tipoobjeto=TODOS&tipotexto=TODOS&lexema_sello=&tipoperiodo=TODOS&tipolenguaje=TODOS&orden=>ver tablillas</a>';
+  var tabDestBD = '<a target="_blank"  href=http://bdtns.filol.csic.es/principal.php?numMuseo=&numBDTS=&numCDLI=&procedencia='+feature.get('mostrar_origen')+'&sello=TODOS&fechaPub=&datacion=&abreviatura=&autor=&propietario='+encodeURIComponent(feature.get('destino').trim())+'&tipoobjeto=TODOS&tipotexto=TODOS&lexema_sello=&tipoperiodo=TODOS&tipolenguaje=TODOS&orden=>ver tablillas</a>';
   var plantilla = '<div class="popover" role="tooltip"><div class="popover-header" style="background-image:url('+feature.get('imagen')+')" title="Destinos"></div><div class="arrow"></div><div onclick="javascript:CierraPops();" class="cierra-pop">X</div><div class="popover-pildoras">'+tabDestBD+'</div><div class="popover-body"></div></div>';
+  var titulo = feature.get('destino');
   var contenido = FormatoContPopup(feature);
   $(element).popover('dispose');
   popup.setPosition(coord);
@@ -495,7 +482,7 @@ function MuestraPopupDestTablillas(coord,feature){
     'animation': false,
     'html': true,
     'content': contenido,
-    'title':'<h4 class="popover-titulo"><span>Destino de las tablillas</span></h4>',
+    'title':'<h4 class="popover-titulo"><span>'+titulo+'</span></h4>',
     'template':plantilla
   });
   $(element).popover('show');
@@ -515,4 +502,57 @@ function CentraMapa(resultado){
   var coordProj = ol.proj.fromLonLat(coord);
   mapa.getView().setCenter(coordProj);
   mapa.getView().setZoom(10);
+}
+
+
+var objTipDest = [
+  {texto:'University',color:'#E17C05'},
+  {texto:'Library',color:'#CC503E'},
+  {texto:'Private collection',color:'#94346E'},
+  {texto:'Museum',color:'#38A6A5'},
+  {texto:'Ecclesiastic',color:'#EDAD08'}
+];
+
+function ColorDestino(txttipdest){
+  var objArea = $.grep(objTipDest,function(tipdest){return tipdest.texto == txttipdest});
+  console.log(objArea);
+  return objArea[0].color;
+}
+
+function PonLeyenda(){
+    var leyDestino = objTipDest;
+    var svg = d3.select("#svg-leyenda");
+    svg.append("text")
+      .attr("y", 20)
+      .attr("x", 10)
+      .style("font-size", '14px')
+      .style("font-weight", 'bold')
+      .style("text-anchor", "left")
+      .text("Owners");
+    var tipoDest = svg.selectAll("g")
+        .data(leyDestino)
+        .enter();
+      tipoDest.append("circle")
+        .attr("r", 5)
+        .attr("cx", '10px')
+        .attr("cy", function (d, i) {
+          return (i+2) * 20;
+        })
+        .attr("fill", function (d,i){
+          return d.color;
+        });
+      tipoDest.append("text")
+        .attr("x",20)
+        .attr("y", function (d, i) {
+          return (i+2) * 20.5;
+        })
+        .style("font-size", '12px')
+        .attr("text-anchor", "left")
+        .text(function(d){return d.texto;});
+      svg.append("svg:image")
+        .attr("y", function(){return (leyDestino.length*20.5)+30})
+        .attr("x", 1)
+        .attr('width', 20)
+        .attr('height', 24)
+        .attr("xlink:href", "./img/central.svg");
 }
