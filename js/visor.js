@@ -268,7 +268,7 @@ function InitMapa(){
           });
       museos.set('name', 'museos');
     var destinoTablillas = new ol.layer.Vector({
-            renderer: 'image',
+            renderMode: 'image',
             style: EstiloDestinosTab
           });
       destinoTablillas.set('name', 'destino-tablillas');
