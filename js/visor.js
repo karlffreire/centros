@@ -202,6 +202,7 @@ function EstiloMuseos(feature) {
 }
 
 function EstiloDestinosTab(feature) {
+  var estilos = [];
   var lineWidthScale = d3.scaleLinear().range([1, 10]);
   var ancho = function(){
     if (feature.get('mostrar_numero_de_tablillas') ==0) {return 0;}
@@ -226,6 +227,7 @@ function EstiloDestinosTab(feature) {
              rotateWithView: true
            })
    });
+   estilos.push(estiloPunto);
    // var estiloLinea = new ol.style.Style({
    //      geometry: linea,
    //      stroke: new ol.style.Stroke({
@@ -234,11 +236,10 @@ function EstiloDestinosTab(feature) {
    //        })
    //  });
    var i = 0;
-   var linestyles = [];
    var strokeWidthIncrement = (lineWidthScale(Math.log(feature.get('mostrar_numero_de_tablillas'))) - lineWidthScale.range()[0]) / (linea.getCoordinates().length - 1);
    var opacityIncrement = 1 / (linea.getCoordinates().length - 1);
-   linea.forEachSegment(function (start, end) {
-     linestyles.push(new ol.style.Style({
+   linea.forEachSegment(function (start, end) {console.log(strokeWidthIncrement * i);
+     estilos.push(new ol.style.Style({
        linea: new ol.geom.LineString([start, end]),
        stroke: new ol.style.Stroke({
          lineCap : (i==0)? 'round' : 'butt',
@@ -249,7 +250,7 @@ function EstiloDestinosTab(feature) {
      }));
      i++;
    });
-    return [linestyles,estiloPunto];
+    return estilos;
 }
 
 function InitMapa(){
