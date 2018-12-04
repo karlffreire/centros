@@ -202,6 +202,7 @@ function EstiloMuseos(feature) {
 }
 
 function EstiloDestinosTab(feature) {
+  var lineWidthScale = d3.scaleLinear().range([1, 10]);
   var ancho = function(){
     if (feature.get('mostrar_numero_de_tablillas') ==0) {return 0;}
     else if (feature.get('mostrar_numero_de_tablillas') ==1) {return 1;}
@@ -225,14 +226,30 @@ function EstiloDestinosTab(feature) {
              rotateWithView: true
            })
    });
-   var estiloLinea = new ol.style.Style({
-        geometry: linea,
-        stroke: new ol.style.Stroke({
-            color: relleno,
-            width: 3
-          })
-    });
-    return [estiloLinea,estiloPunto];
+   // var estiloLinea = new ol.style.Style({
+   //      geometry: linea,
+   //      stroke: new ol.style.Stroke({
+   //          color: relleno,
+   //          width: 3
+   //        })
+   //  });
+   var i = 0;
+   var linestyles = [];
+   var strokeWidthIncrement = (lineWidthScale(Math.log(feature.get('mostrar_numero_de_tablillas'))) - lineWidthScale.range()[0]) / (linea.getCoordinates().length - 1);
+   var opacityIncrement = 1 / (linea.getCoordinates().length - 1);
+   linea.forEachSegment(function (start, end) {
+     linestyles.push(new ol.style.Style({
+       linea: new ol.geom.LineString([start, end]),
+       stroke: new ol.style.Stroke({
+         lineCap : (i==0)? 'round' : 'butt',
+         lineJoin : 'miter',
+         color: 'rgba(200, 0, 0, ' + ((opacityIncrement * i)) + ')',
+         width: lineWidthScale(lineWidthScale.range()[0]) + (strokeWidthIncrement * i)
+       })
+     }));
+     i++;
+   });
+    return [linestyles,estiloPunto];
 }
 
 function InitMapa(){
@@ -251,6 +268,7 @@ function InitMapa(){
           });
       museos.set('name', 'museos');
     var destinoTablillas = new ol.layer.Vector({
+            renderer: 'image',
             style: EstiloDestinosTab
           });
       destinoTablillas.set('name', 'destino-tablillas');
@@ -515,7 +533,6 @@ var objTipDest = [
 
 function ColorDestino(txttipdest){
   var objArea = $.grep(objTipDest,function(tipdest){return tipdest.texto == txttipdest});
-  console.log(objArea);
   return objArea[0].color;
 }
 
