@@ -160,7 +160,31 @@ function PonYacis(resultado){
         features: geojsonYacis
       });
   yacis.setSource(yacisSource);
+  ponDesplegable(yacisSource.getFeatures());
   mapa.getView().fit(yacis.getSource().getExtent(), {duration: 2000});
+}
+
+function ponDesplegable(yacis){
+  $('#busca-yaci').select2({
+    data :  $.map(yacis, function (obj) {
+      obj.id = obj.id || obj.get('id');
+      obj.text = obj.text || obj.get('nombre');
+      return obj;
+    }),
+    placeholder: 'Search for a site',
+    allowClear: true,
+    theme: "bootstrap",
+    width: 'copy'
+  });
+  $('#busca-yaci').on('select2:select',function(e){
+    IrAYaci();
+  });
+}
+
+function IrAYaci(){
+  var yaci = $("#busca-yaci").select2('data')[0];
+  mapa.getView().fit(yaci.getGeometry(), {duration: 1000});
+  $("#busca-yaci").val(null).trigger('change');
 }
 
 function PonMuseos(resultado){

@@ -24,16 +24,10 @@
   <body onload="javascript:InitMapa();CargaYacis(PonYacis);CargaMuseos(PonMuseos);PonPopups();javascript:PonLeyenda();">
       <nav class="navbar navbar-dark bg-dark fixed-top cabecera" >
         <div class="">
-          <span class="log-min">
-            <a href="http://www.csic.es/" target="_blank"><img src="./img/logoMinisterio.png" title="MEC" class="" style="height: 40px;"/></a>
-            <a href="http://www.csic.es/" target="_blank"><img src="./img/logoCsic.png" title="CSIC" class="logo" style="height: 40px;"/></a>
-          </span>
-        </div>
-        <div class="">
           <span id="titulo" class="navbar-text">Neo-Summerian Texts Web Map</span>
         </div>
         <div class="" style="width:200px;">
-          <img src="./img/logo_BDTNS.gif" title="BDTNS" class="" style="width:50px;height:50px"/>
+          <a href="http://bdtns.filol.csic.es/" target="_blank"><img src="./img/logo_BDTNS.gif" title="BDTNS" class="" style="width:50px;height:50px"/></a>
         </div>
       </nav>
       <div class="container-fluid todo">
@@ -46,7 +40,7 @@
           </div>
           <div class="">
             <div class="form-group">
-              <select class="form-control" name="b-centro" id="busca-centro" >
+              <select class="form-control" name="b-yaci" id="busca-yaci" >
                 <option value=""></option>
               </select>
             </div>
@@ -65,9 +59,10 @@
       </div>
       <footer class="footer">
         <span>
-          <img src="./img/cc-by-sa.png" title="copyright" class="logo"/> Consejo Superior de Investigaciones Científicas
-        </span>
+          <img src="./img/cc-by-sa.png" title="copyright" class="logo"/ style="margin-right: 5em;"> 	© 2002 Manuel Molina. </span>
+          <span class="credits"><a href="http://bdtns.filol.csic.es/extras/doc/2011_12_20_Copyright_BDTNS.pdf" target="_blank">Copyright and credits.</a> Funded by Ministerio de Ciencia, Innovación y Universidades</span>
         <span style="float:right">
+          <a href="http://www.csic.es/" target="_blank"><img src="./img/logo_csic.png" title="CCHS" class="logo"/></a>
           <a href="http://cchs.csic.es/" target="_blank"><img src="./img/cchs_b.png" title="CCHS" class="logo"/></a>
           <a href="http://unidadsig.cchs.csic.es/sig/" target="_blank"><img src="./img/usig_b.png" class="logo" title="USIG"/></a>
         </span>
