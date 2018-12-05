@@ -130,7 +130,7 @@ function PonTablillasYaci(resultado){
     fin.x = destinoGeo.getCoordinates()[0];
     fin.y = destinoGeo.getCoordinates()[1];
     var arco = new arc.GreatCircle(inicio, fin);
-    var coordLinea = arco.Arc(100,{offset:10});
+    var coordLinea = arco.Arc(200,{offset:10});
     var linea = new ol.geom.LineString(coordLinea.geometries[0].coords);
       linea.transform('EPSG:4326','EPSG:3857');
     var geomDestino = new ol.geom.GeometryCollection([linea,destinos[i].getGeometry()]);
@@ -201,25 +201,48 @@ function EstiloMuseos(feature) {
     return [estilo_mus];
 }
 
+var rampa1 = [
+  {"hex":'#5F4690',"rgb":'95,70,144'},
+  {"hex":'#1D6996',"rgb":'29,105,150'},
+  {"hex":'#38A6A5',"rgb":'56,166,165'},
+  {"hex":'#0F8554',"rgb":'15,133,84'},
+  {"hex":'#73AF48',"rgb":'115,175,72'},
+  {"hex":'#EDAD08',"rgb":'237,173,8'},
+  {"hex":'#E17C05',"rgb":'225,124,5'},
+  {"hex":'#CC503E',"rgb":'204,80,62'},
+  {"hex":'#94346E',"rgb":'148,52,110'},
+  {"hex":'#6F4070',"rgb":'111,64,112'},
+  {"hex":'#994E95',"rgb":'153,78,149'},
+  {"hex":'#666666',"rgb":'102,102,102'}
+];
+
+var objTipDest = [
+  {texto:'University',color: rampa1[6]},
+  {texto:'Library',color:rampa1[7]},
+  {texto:'Private collection',color:rampa1[2]},
+  {texto:'Museum',color:rampa1[8]},
+  {texto:'Ecclesiastic',color:rampa1[5]}
+];
+
+function ColorDestino(txttipdest){
+  var objArea = $.grep(objTipDest,function(tipdest){return tipdest.texto == txttipdest});
+  return objArea[0].color;
+}
+
 function EstiloDestinosTab(feature) {
   var estilos = [];
-  var lineWidthScale = d3.scaleLinear().range([1, 10]);
-  var ancho = function(){
-    if (feature.get('mostrar_numero_de_tablillas') ==0) {return 0;}
-    else if (feature.get('mostrar_numero_de_tablillas') ==1) {return 1;}
-    else{return Math.log(feature.get('mostrar_numero_de_tablillas'));}
-  };
-  var relleno = ColorDestino(feature.get('mostrar_tipo'));
+  var lineWidthScale = d3.scaleLinear().range([1, 5]);
+  var relleno = ColorDestino(feature.get('mostrar_tipo')).hex;
   var geoms = feature.getGeometry().getGeometries();
   var linea = geoms[0];
   var punto = geoms[1];
   var estiloPunto = new ol.style.Style({
        geometry: punto,
        image: new ol.style.Circle({
-             radius: ancho() > 2? ancho() : 2,
+             radius: ((lineWidthScale(Math.log(feature.get('mostrar_numero_de_tablillas'))) - lineWidthScale.range()[0])/2)+3,
              stroke: new ol.style.Stroke({
                width: 2,
-               color: relleno
+               color: 'rgba('+rampa1[11].rgb +',0.5)',
              }),
              fill: new ol.style.Fill({
                color: relleno
@@ -228,23 +251,16 @@ function EstiloDestinosTab(feature) {
            })
    });
    estilos.push(estiloPunto);
-   // var estiloLinea = new ol.style.Style({
-   //      geometry: linea,
-   //      stroke: new ol.style.Stroke({
-   //          color: relleno,
-   //          width: 3
-   //        })
-   //  });
    var i = 0;
    var strokeWidthIncrement = (lineWidthScale(Math.log(feature.get('mostrar_numero_de_tablillas'))) - lineWidthScale.range()[0]) / (linea.getCoordinates().length - 1);
-   var opacityIncrement = 1 / (linea.getCoordinates().length - 1);
-   linea.forEachSegment(function (start, end) {console.log(strokeWidthIncrement * i);
+   var opacityIncrement = 0.8 / (linea.getCoordinates().length - 1);
+   linea.forEachSegment(function (start, end) {
      estilos.push(new ol.style.Style({
-       linea: new ol.geom.LineString([start, end]),
+       geometry: new ol.geom.LineString([start, end]),
        stroke: new ol.style.Stroke({
          lineCap : (i==0)? 'round' : 'butt',
          lineJoin : 'miter',
-         color: 'rgba(200, 0, 0, ' + ((opacityIncrement * i)) + ')',
+         color: 'rgba('+ColorDestino(feature.get('mostrar_tipo')).rgb +','+ ((opacityIncrement * i)) + ')',
          width: lineWidthScale(lineWidthScale.range()[0]) + (strokeWidthIncrement * i)
        })
      }));
@@ -523,20 +539,6 @@ function CentraMapa(resultado){
   mapa.getView().setZoom(10);
 }
 
-
-var objTipDest = [
-  {texto:'University',color:'#E17C05'},
-  {texto:'Library',color:'#CC503E'},
-  {texto:'Private collection',color:'#94346E'},
-  {texto:'Museum',color:'#38A6A5'},
-  {texto:'Ecclesiastic',color:'#EDAD08'}
-];
-
-function ColorDestino(txttipdest){
-  var objArea = $.grep(objTipDest,function(tipdest){return tipdest.texto == txttipdest});
-  return objArea[0].color;
-}
-
 function PonLeyenda(){
     var leyDestino = objTipDest;
     var svg = d3.select("#svg-leyenda");
@@ -557,7 +559,7 @@ function PonLeyenda(){
           return (i+2) * 20;
         })
         .attr("fill", function (d,i){
-          return d.color;
+          return d.color.hex;
         });
       tipoDest.append("text")
         .attr("x",20)
