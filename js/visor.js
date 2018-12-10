@@ -136,10 +136,10 @@ function PonTablillasYaci(resultado){
     var geomDestino = new ol.geom.GeometryCollection([linea,destinos[i].getGeometry()]);
     lineaPuntFeat.setGeometry(geomDestino);
       lineaPuntFeat.set("imagen",destinos[i].get('imagen'));
-      lineaPuntFeat.set("mostrar_tipo",destinos[i].get('mostrar_tipo'));
+      lineaPuntFeat.set("mostrar_destination_type",destinos[i].get('mostrar_destination_type'));
       lineaPuntFeat.set("destino",destinos[i].get('nombre'));
-      lineaPuntFeat.set("mostrar_origen",origen.get('nombre'));
-      lineaPuntFeat.set("mostrar_numero_de_tablillas",Number(destino.count));
+      lineaPuntFeat.set("mostrar_procedence",origen.get('nombre'));
+      lineaPuntFeat.set("mostrar_texts_number",Number(destino.count));
       lineaPuntFeat.set("id",destino.id);
     destinosSource.addFeatures([lineaPuntFeat]);
   }
@@ -183,7 +183,7 @@ function ponDesplegable(yacis){
 
 function IrAYaci(){
   var yaci = $("#busca-yaci").select2('data')[0];
-  mapa.getView().fit(yaci.getGeometry(), {duration: 1000});
+  mapa.getView().fit(yaci.getGeometry(), {duration: 1000,maxZoom:14});
   $("#busca-yaci").val(null).trigger('change');
 }
 
@@ -194,7 +194,7 @@ function PonMuseos(resultado){
     var nomcapa = capas[i].get('name');
     if (nomcapa == 'museos') {museos = capas[i];}
     }
-  var geojsonMuseos = new ol.format.GeoJSON().readFeatures(resultado);
+  geojsonMuseos = new ol.format.GeoJSON().readFeatures(resultado);
   var museosSource = new ol.source.Vector({
         features: geojsonMuseos
       });
@@ -256,14 +256,14 @@ function ColorDestino(txttipdest){
 function EstiloDestinosTab(feature) {
   var estilos = [];
   var lineWidthScale = d3.scaleLinear().range([1, 5]);
-  var relleno = ColorDestino(feature.get('mostrar_tipo')).hex;
+  var relleno = ColorDestino(feature.get('mostrar_destination_type')).hex;
   var geoms = feature.getGeometry().getGeometries();
   var linea = geoms[0];
   var punto = geoms[1];
   var estiloPunto = new ol.style.Style({
        geometry: punto,
        image: new ol.style.Circle({
-             radius: ((lineWidthScale(Math.log(feature.get('mostrar_numero_de_tablillas'))) - lineWidthScale.range()[0])/2)+3,
+             radius: ((lineWidthScale(Math.log(feature.get('mostrar_texts_number'))) - lineWidthScale.range()[0])/2)+3,
              stroke: new ol.style.Stroke({
                width: 2,
                color: 'rgba('+rampa1[11].rgb +',0.5)',
@@ -276,7 +276,7 @@ function EstiloDestinosTab(feature) {
    });
    estilos.push(estiloPunto);
    var i = 0;
-   var strokeWidthIncrement = (lineWidthScale(Math.log(feature.get('mostrar_numero_de_tablillas'))) - lineWidthScale.range()[0]) / (linea.getCoordinates().length - 1);
+   var strokeWidthIncrement = (lineWidthScale(Math.log(feature.get('mostrar_texts_number'))) - lineWidthScale.range()[0]) / (linea.getCoordinates().length - 1);
    var opacityIncrement = 0.8 / (linea.getCoordinates().length - 1);
    linea.forEachSegment(function (start, end) {
      estilos.push(new ol.style.Style({
@@ -284,7 +284,7 @@ function EstiloDestinosTab(feature) {
        stroke: new ol.style.Stroke({
          lineCap : (i==0)? 'round' : 'butt',
          lineJoin : 'miter',
-         color: 'rgba('+ColorDestino(feature.get('mostrar_tipo')).rgb +','+ ((opacityIncrement * i)) + ')',
+         color: 'rgba('+ColorDestino(feature.get('mostrar_destination_type')).rgb +','+ ((opacityIncrement * i)) + ')',
          width: lineWidthScale(lineWidthScale.range()[0]) + (strokeWidthIncrement * i)
        })
      }));
@@ -294,12 +294,19 @@ function EstiloDestinosTab(feature) {
 }
 
 function InitMapa(){
-  var mapbox = new ol.layer.Tile({
+  // var mapbox = new ol.layer.Tile({
+  //       source: new ol.source.XYZ({
+  //         attributions: ' Basemap by <a href="https://www.mapbox.com/about/maps/">© Mapbox</a> | <a href="http://www.openstreetmap.org/copyright">© OpenStreetMap</a> | <a href="https://www.mapbox.com/map-feedback/" target="_blank">Improve this map</a>',
+  //         url: urlMapbox
+  //       })
+  //     });
+  var teselas = new ol.layer.Tile({
         source: new ol.source.XYZ({
-          attributions: ' Basemap by <a href="https://www.mapbox.com/about/maps/">© Mapbox</a> | <a href="http://www.openstreetmap.org/copyright">© OpenStreetMap</a> | <a href="https://www.mapbox.com/map-feedback/" target="_blank">Improve this map</a>',
-          url: urlMapbox
+          attributions: 'Teselas USIG',
+          url: 'http://161.111.72.12:8080/styles/light/{z}/{x}/{y}.png'
         })
       });
+  teselas.set('name','mapabase');
     var yacis = new ol.layer.Vector({
             style: EstiloYacis
           });
@@ -331,12 +338,12 @@ function InitMapa(){
         }),
         new ol.control.Attribution()
       ],
-      layers: [mapbox,destinoTablillas,yacis, museos],
+      layers: [teselas,destinoTablillas,yacis, museos],
       view: new ol.View({
         projection: 'EPSG:3857',
         center: [-288976.121475105, 4868797.98060151],
         minZoom: 2,
-        maxZoom:18,
+        maxZoom:17,
         zoom: 3
       }),
       target: 'map'
@@ -351,16 +358,16 @@ function InitMapa(){
 }
 
 function ponMapaBase(capa){
-	if (capa == 'mapbox') {
-		var mapbox = new ol.layer.Tile({
-	      source: new ol.source.XYZ({
-	      	attributions: ['Basemap by <a href="https://www.mapbox.com/about/maps/">© Mapbox</a> | <a href="http://www.openstreetmap.org/copyright">© OpenStreetMap</a> | <a href="https://www.mapbox.com/map-feedback/" target="_blank">Improve this map</a>'],
-	        url: 'https://api.mapbox.com/styles/v1/nuriet/cjin3sb4l08ch2spe4oetgy15/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoibnVyaWV0IiwiYSI6ImNqOG9tNXA5ZTA0dDkzMnF1N3BrdXNoNWsifQ.lrE5q9kdpMCeMdrkn47Xeg'
-	      })
-	    });
-	    mapbox.set('name','mapabase');
+	if (capa == 'teselas') {
+      var teselas = new ol.layer.Tile({
+            source: new ol.source.XYZ({
+              attributions: 'Teselas USIG',
+              url: 'http://161.111.72.12:8080/styles/light/{z}/{x}/{y}.png'
+            })
+          });
+      teselas.set('name','mapabase');
 	    mapa.getLayers().removeAt(0);
-	    mapa.getLayers().insertAt(0,mapbox);
+	    mapa.getLayers().insertAt(0,teselas);
 	   // document.getElementById('creditos-base').innerHTML = mapbox.getSource().attributions_[0].html_;
 	    $('#basemapbox').hide();
 	    $('#baseesri').show();
@@ -438,13 +445,6 @@ function DisparaPopup(evt,feature,layer){
     }
         return feature;
   }
-  // else if (layer.get('name') == 'museos') {
-  //   if (feature) {
-  //     var coordinate = evt.coordinate;
-  //     MuestraPopupMuseos(coordinate,feature);
-  //   }
-  //   return feature;
-  // }
   else if (layer.get('name') == 'destino-tablillas') {
     if (feature) {
       var coordinate = evt.coordinate;
@@ -490,8 +490,8 @@ function FormatoContPopup(feature){
 function MuestraPopupYacis(coord,feature){
   var element = document.getElementById('popup');
   var popup = mapa.getOverlays().item(0);//esto sólo funciona porque no tengo más overlays en el mapa. HACER BIEN
-  var destinos = '<a href=javascript:SelecTablillasYaci("'+feature.get('id')+'",PonTablillasYaci)>ver destinos</a>';
-  var tabYaciBD = '<a target="_blank"  href=http://bdtns.filol.csic.es/principal.php?numMuseo=&numBDTS=&numCDLI=&procedencia='+feature.get('nombre')+'&sello=TODOS&fechaPub=&datacion=&abreviatura=&autor=&propietario=&tipoobjeto=TODOS&tipotexto=TODOS&lexema_sello=&tipoperiodo=TODOS&tipolenguaje=TODOS&orden=>ver tablillas</a>';
+  var destinos = '<a href=javascript:SelecTablillasYaci("'+feature.get('id')+'",PonTablillasYaci)>Destinations</a>';
+  var tabYaciBD = '<a target="_blank"  href=http://bdtns.filol.csic.es/principal.php?numMuseo=&numBDTS=&numCDLI=&procedencia='+feature.get('nombre')+'&sello=TODOS&fechaPub=&datacion=&abreviatura=&autor=&propietario=&tipoobjeto=TODOS&tipotexto=TODOS&lexema_sello=&tipoperiodo=TODOS&tipolenguaje=TODOS&orden=>Texts</a>';
   var plantilla = '<div class="popover" role="tooltip"><div class="popover-header" style="background-image:url('+feature.get('imagen')+')" title="Centros"></div><div class="arrow"></div><div onclick="javascript:CierraPops();" class="cierra-pop">X</div><div class="popover-pildoras">'+destinos+tabYaciBD+'</div><div class="popover-body"></div></div>';
   var titulo = feature.get('nombre');
   var contenido = FormatoContPopup(feature);
@@ -530,7 +530,7 @@ function MuestraPopupMuseos(coord,feature){
 function MuestraPopupDestTablillas(coord,feature){
   var element = document.getElementById('popup');
   var popup = mapa.getOverlays().item(0);//esto sólo funciona porque no tengo más overlays en el mapa. HACER BIEN
-  var tabDestBD = '<a target="_blank"  href=http://bdtns.filol.csic.es/principal.php?numMuseo=&numBDTS=&numCDLI=&procedencia='+feature.get('mostrar_origen')+'&sello=TODOS&fechaPub=&datacion=&abreviatura=&autor=&propietario='+encodeURIComponent(feature.get('destino').trim())+'&tipoobjeto=TODOS&tipotexto=TODOS&lexema_sello=&tipoperiodo=TODOS&tipolenguaje=TODOS&orden=>ver tablillas</a>';
+  var tabDestBD = '<a target="_blank"  href=http://bdtns.filol.csic.es/principal.php?numMuseo=&numBDTS=&numCDLI=&procedencia='+feature.get('mostrar_procedence')+'&sello=TODOS&fechaPub=&datacion=&abreviatura=&autor=&propietario='+encodeURIComponent(feature.get('destino').trim())+'&tipoobjeto=TODOS&tipotexto=TODOS&lexema_sello=&tipoperiodo=TODOS&tipolenguaje=TODOS&orden=>Texts</a>';
   var plantilla = '<div class="popover" role="tooltip"><div class="popover-header" style="background-image:url('+feature.get('imagen')+')" title="Destinos"></div><div class="arrow"></div><div onclick="javascript:CierraPops();" class="cierra-pop">X</div><div class="popover-pildoras">'+tabDestBD+'</div><div class="popover-body"></div></div>';
   var titulo = feature.get('destino');
   var contenido = FormatoContPopup(feature);
@@ -563,7 +563,7 @@ function CentraMapa(resultado){
   mapa.getView().setZoom(10);
 }
 
-function PonLeyenda(){
+function PonLeyenda(){//QUITAR D3 Y CAMBIARLO A UN CHECKBOX NORMAL
     var leyDestino = objTipDest;
     var svg = d3.select("#svg-leyenda");
     svg.append("text")
@@ -599,4 +599,22 @@ function PonLeyenda(){
         .attr('width', 20)
         .attr('height', 24)
         .attr("xlink:href", "./img/central.svg");
+}
+
+function filtraDestinos(tipos){
+	var destinoTablillas;
+	mapa.getLayers().forEach(function(layer,i){
+		var nomcapa = layer.get('name');
+    if (nomcapa == 'destino-tablillas') {destinoTablillas = capas[i];}
+    }
+	});
+	if (geojsonMuseos) {
+    var featsfilt = $.grep(geojsonMuseos,function(feat){return tipos.indexOf(feat.get('mostrar_destination_type')) != -1;})
+
+		// var naufragiosSourceFilt = new ol.source.Vector({
+	  //       features: featsfilt
+	  //     });
+		// naufragios.getSource().clear();
+		// naufragios.setSource(agrupaNaufragiosFilt);
+	}
 }
