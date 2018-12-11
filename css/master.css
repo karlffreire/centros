@@ -77,6 +77,25 @@ body{
   margin-bottom: 5px;
 }
 
+.form-check-label{
+  font-size: 0.8em;
+}
+
+input[type="checkbox"] {
+    appearance: none;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid #c8c6c6;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    cursor:pointer;
+}
+
+.destino-oculto{
+  background-color: white !important;
+}
+
 .info-pos{
   position: absolute;
   left: 0.5em;

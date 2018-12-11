@@ -141,6 +141,7 @@ function PonTablillasYaci(resultado){
       lineaPuntFeat.set("mostrar_procedence",origen.get('nombre'));
       lineaPuntFeat.set("mostrar_texts_number",Number(destino.count));
       lineaPuntFeat.set("id",destino.id);
+      lineaPuntFeat.set("visible",true);
     destinosSource.addFeatures([lineaPuntFeat]);
   }
   destinoTablillas.setSource(destinosSource);//para hacer curvas hay que usar arcs.js: https://github.com/springmeyer/arc.js
@@ -194,7 +195,7 @@ function PonMuseos(resultado){
     var nomcapa = capas[i].get('name');
     if (nomcapa == 'museos') {museos = capas[i];}
     }
-  geojsonMuseos = new ol.format.GeoJSON().readFeatures(resultado);
+  var geojsonMuseos = new ol.format.GeoJSON().readFeatures(resultado);
   var museosSource = new ol.source.Vector({
         features: geojsonMuseos
       });
@@ -240,7 +241,7 @@ var rampa1 = [
   {"hex":'#666666',"rgb":'102,102,102'}
 ];
 
-var objTipDest = [
+var objTipDest = [//DEBERÍA CARGARSE DE LA BASE DE DATOS
   {texto:'University',color: rampa1[6]},
   {texto:'Library',color:rampa1[7]},
   {texto:'Private collection',color:rampa1[2]},
@@ -254,43 +255,48 @@ function ColorDestino(txttipdest){
 }
 
 function EstiloDestinosTab(feature) {
-  var estilos = [];
-  var lineWidthScale = d3.scaleLinear().range([1, 5]);
-  var relleno = ColorDestino(feature.get('mostrar_destination_type')).hex;
-  var geoms = feature.getGeometry().getGeometries();
-  var linea = geoms[0];
-  var punto = geoms[1];
-  var estiloPunto = new ol.style.Style({
-       geometry: punto,
-       image: new ol.style.Circle({
-             radius: ((lineWidthScale(Math.log(feature.get('mostrar_texts_number'))) - lineWidthScale.range()[0])/2)+3,
-             stroke: new ol.style.Stroke({
-               width: 2,
-               color: 'rgba('+rampa1[11].rgb +',0.5)',
-             }),
-             fill: new ol.style.Fill({
-               color: relleno
-             }),
-             rotateWithView: true
-           })
-   });
-   estilos.push(estiloPunto);
-   var i = 0;
-   var strokeWidthIncrement = (lineWidthScale(Math.log(feature.get('mostrar_texts_number'))) - lineWidthScale.range()[0]) / (linea.getCoordinates().length - 1);
-   var opacityIncrement = 0.8 / (linea.getCoordinates().length - 1);
-   linea.forEachSegment(function (start, end) {
-     estilos.push(new ol.style.Style({
-       geometry: new ol.geom.LineString([start, end]),
-       stroke: new ol.style.Stroke({
-         lineCap : (i==0)? 'round' : 'butt',
-         lineJoin : 'miter',
-         color: 'rgba('+ColorDestino(feature.get('mostrar_destination_type')).rgb +','+ ((opacityIncrement * i)) + ')',
-         width: lineWidthScale(lineWidthScale.range()[0]) + (strokeWidthIncrement * i)
-       })
-     }));
-     i++;
-   });
+  if (feature.get('visible')) {
+    var estilos = [];
+    var lineWidthScale = d3.scaleLinear().range([1, 5]);
+    var relleno = ColorDestino(feature.get('mostrar_destination_type')).hex;
+    var geoms = feature.getGeometry().getGeometries();
+    var linea = geoms[0];
+    var punto = geoms[1];
+    var estiloPunto = new ol.style.Style({
+      geometry: punto,
+      image: new ol.style.Circle({
+        radius: ((lineWidthScale(Math.log(feature.get('mostrar_texts_number'))) - lineWidthScale.range()[0])/2)+3,
+        stroke: new ol.style.Stroke({
+          width: 2,
+          color: 'rgba('+rampa1[11].rgb +',0.5)',
+        }),
+        fill: new ol.style.Fill({
+          color: relleno
+        }),
+        rotateWithView: true
+      })
+    });
+    estilos.push(estiloPunto);
+    var i = 0;
+    var strokeWidthIncrement = (lineWidthScale(Math.log(feature.get('mostrar_texts_number'))) - lineWidthScale.range()[0]) / (linea.getCoordinates().length - 1);
+    var opacityIncrement = 0.8 / (linea.getCoordinates().length - 1);
+    linea.forEachSegment(function (start, end) {
+      estilos.push(new ol.style.Style({
+        geometry: new ol.geom.LineString([start, end]),
+        stroke: new ol.style.Stroke({
+          lineCap : (i==0)? 'round' : 'butt',
+          lineJoin : 'miter',
+          color: 'rgba('+ColorDestino(feature.get('mostrar_destination_type')).rgb +','+ ((opacityIncrement * i)) + ')',
+          width: lineWidthScale(lineWidthScale.range()[0]) + (strokeWidthIncrement * i)
+        })
+      }));
+      i++;
+    });
     return estilos;
+  }
+  else {
+    return null;
+  }
 }
 
 function InitMapa(){
@@ -563,58 +569,51 @@ function CentraMapa(resultado){
   mapa.getView().setZoom(10);
 }
 
-function PonLeyenda(){//QUITAR D3 Y CAMBIARLO A UN CHECKBOX NORMAL
+function PonLeyenda(){
     var leyDestino = objTipDest;
-    var svg = d3.select("#svg-leyenda");
-    svg.append("text")
-      .attr("y", 20)
-      .attr("x", 10)
-      .style("font-size", '14px')
-      .style("font-weight", 'bold')
-      .style("text-anchor", "left")
-      .text("Owners");
-    var tipoDest = svg.selectAll("g")
-        .data(leyDestino)
-        .enter();
-      tipoDest.append("circle")
-        .attr("r", 5)
-        .attr("cx", '10px')
-        .attr("cy", function (d, i) {
-          return (i+2) * 20;
-        })
-        .attr("fill", function (d,i){
-          return d.color.hex;
-        });
-      tipoDest.append("text")
-        .attr("x",20)
-        .attr("y", function (d, i) {
-          return (i+2) * 20.5;
-        })
-        .style("font-size", '12px')
-        .attr("text-anchor", "left")
-        .text(function(d){return d.texto;});
-      svg.append("svg:image")
-        .attr("y", function(){return (leyDestino.length*20.5)+30})
-        .attr("x", 1)
-        .attr('width', 20)
-        .attr('height', 24)
-        .attr("xlink:href", "./img/central.svg");
+    var leyenda = document.getElementById('leyenda');
+    for (var i = 0; i < leyDestino.length; i++) {
+      var div = document.createElement('div');
+      div.setAttribute('class','form-check');
+      var checkbox = document.createElement('input');
+      checkbox.setAttribute('class','form-check-input chk-dest');
+      checkbox.setAttribute('style','background-color:'+leyDestino[i].color.hex);
+      checkbox.setAttribute('id','chk'+leyDestino[i].texto);
+      $(checkbox).on('click',function(){filtraDestinos(this);});
+      checkbox.type = "checkbox";
+      checkbox.checked = true;
+      var etiqueta = document.createElement('label');
+      etiqueta.setAttribute('class','form-check-label');
+      etiqueta.setAttribute('for','chk'+leyDestino[i].texto);
+      etiqueta.innerHTML =  leyDestino[i].texto;
+      div.appendChild(checkbox);
+      div.appendChild(etiqueta);
+      leyenda.appendChild(div);
+
+    }
 }
 
-function filtraDestinos(tipos){
+function filtraDestinos(este){
+  $(este).toggleClass('destino-oculto');
 	var destinoTablillas;
+  var tipos = [];
+   $('.chk-dest:checkbox:checked').each(function(i,e){
+     tipos.push(e.id.substring(3));
+   });
 	mapa.getLayers().forEach(function(layer,i){
 		var nomcapa = layer.get('name');
-    if (nomcapa == 'destino-tablillas') {destinoTablillas = capas[i];}
+    if (nomcapa == 'destino-tablillas') {destinoTablillas = layer;}
     }
-	});
-	if (geojsonMuseos) {
-    var featsfilt = $.grep(geojsonMuseos,function(feat){return tipos.indexOf(feat.get('mostrar_destination_type')) != -1;})
-
-		// var naufragiosSourceFilt = new ol.source.Vector({
-	  //       features: featsfilt
-	  //     });
-		// naufragios.getSource().clear();
-		// naufragios.setSource(agrupaNaufragiosFilt);
+	);
+  var features = destinoTablillas.getSource().getFeatures();
+	if (features) {
+    for (var i = 0; i < features.length; i++) {
+      if (tipos.indexOf(features[i].get('mostrar_destination_type')) != -1) {
+        features[i].set('visible',true);
+      }
+      else{
+        features[i].set('visible',false);
+      }
+    }
 	}
 }

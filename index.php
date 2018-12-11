@@ -1,3 +1,10 @@
+<?php
+session_start();
+
+if ((!isset($_SESSION['usfsd']) ||  !isset($_SESSION['pssfsd']) || $_SESSION['proyecto'] != 'tablillas')) {
+  header('location:./entrando.php');
+}
+?>
 <!DOCTYPE html>
 <html lang="es" dir="ltr">
   <head>
@@ -26,6 +33,13 @@
         <div class="">
           <span id="titulo" class="navbar-text">Neo-Summerian Texts Web Map</span>
         </div>
+        <div class="well  col-md-6" style="padding:0;margin:0;">
+          <p style="margin:0;color:#6E6E6E;font-weight:bold;">Beta version web portal
+            <button type="button" class="btn btn-danger btn-md" onclick="window.location.href='./datos/desconecta.php'" style="margin-left: 20px;">Log out
+              <span class="glyphicon glyphicon-log-out" aria-hidden="true"></span>
+            </button>
+          </p>
+        </div>
         <div class="" style="width:200px;">
           <a href="http://bdtns.filol.csic.es/" target="_blank"><img src="./img/logo_BDTNS.gif" title="BDTNS" class="" style="width:50px;height:50px"/></a>
         </div>
@@ -36,7 +50,6 @@
         </div>
         <div class="bloque-izq">
           <div id="leyenda" class="leyenda" >
-            <svg id="svg-leyenda" style="width:150px;height:130px;"></svg>
           </div>
           <div class="">
             <div class="form-group">
